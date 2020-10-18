@@ -1,12 +1,12 @@
 function [oe_vec] = cart2kepl_KZ(ss_vec, mu)
 % This function transforms state-space vector into oe_vecerian elements
-
+%
 % INPUTS
 %   - ss_vec : State-space vector (1x6) ordered as follows :
 %       - ss_vec(1:3) = r_vec = [   x    y    z  ]      [m]
 %       - ss_vec(4:6) = v_vec = [ xdot ydot zdot ]      [m/s]
-%   - mu     : Central body gravitational parameter     [km^3/s^2]
-
+%   - mu     : Central body gravitational parameter     [m^3/s^2]
+%
 % OUTPUTS
 %   - oe_vec : Vector of Keplerian elements (1x6) ordered as follows :
 %       - oe_vec(1) : a     - semi-major axis       [m]
@@ -15,7 +15,7 @@ function [oe_vec] = cart2kepl_KZ(ss_vec, mu)
 %       - oe_vec(4) : omega - argument of perigee   [rad]
 %       - oe_vec(5) : Omega - RAAN                  [rad]
 %       - oe_vec(6) : theta - true anomaly          [rad]
-
+%
 % REFERENCES
 % Chapter 3A - The orbit in space of Pr. G. Kerschen
 % see http://www.s3l.be/en/education
