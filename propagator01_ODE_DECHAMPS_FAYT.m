@@ -39,23 +39,31 @@ options = odeset('RelTol',1e-8,'AbsTol',1e-8);
 % But for computational purposes, Cartesian coordinates are used.
 ss0 = kepl2cart_KZ(oe0, mu);
 
-rnorm = norm(ss0(1:3));
-
-[~, x_vec] = ode45( @(t,x_vec) keplereq1D(t, x_vec, mu, rnorm), ...
-    tspan, [ss0(1) ss0(4)], options);
-
-[~, y_vec] = ode45( @(t,y_vec) keplereq1D(t, y_vec, mu, rnorm), ...
-    tspan, [ss0(2) ss0(5)], options);
-
-[~, z_vec] = ode45( @(t,z_vec) keplereq1D(t, z_vec, mu, rnorm), ...
-    tspan, [ss0(3) ss0(6)], options);
-
-ss_vec = [x_vec(:,1) y_vec(:,1) z_vec(:,1)...
-    x_vec(:,2) y_vec(:,2) z_vec(:,2)];
+[~, ss_vec] = ode45( @(t,ss_vec) keplereq3D(t, ss_vec, mu), ...
+    tspan, ss0, options);
 
 oe_vec = cart2kepl_KZ(ss_vec', mu);
 oe_vec = oe_vec';
 end
+
+function ddt = keplereq3D(~, data, mu)
+% This function represents the 2nd order kepler equation of relative motion
+% as a system of 1st order ODE, in one dimension.
+
+rnorm = norm(data(1:3));
+
+ddt = zeros(6,1);
+ddt(1) = data(4);                   % x1
+ddt(2) = data(5);                   % y1
+ddt(3) = data(6);                   % z1
+
+ddt(4) = - mu / rnorm^3 * data(1);  % x2
+ddt(5) = - mu / rnorm^3 * data(2);  % y2
+ddt(6) = - mu / rnorm^3 * data(3);  % z2
+
+end
+
+
 
 
 function ddt = keplereq1D(~, data, mu, rnorm)
