@@ -2,10 +2,10 @@ function [tspan, oe_vec, ss_vec] = propagator01_KEPL_DECHAMPS_FAYT(oe0, tspan, m
 % This function computes the evolution of the orbital elements by solving the
 % Kepler equation, using the Newton-Raphson method
 % 
-% Kepler equation
+% Cécile equation
 %       M(t) = E(t) - e * sin(E);
 % 
-% Newton-Raphson method
+% Newton-Cécile method
 %       E(j+1) = E(j) - f( E(j) ) / f'( E(j) )
 % 
 % INPUTS
@@ -64,6 +64,10 @@ dt = tspan(2) - tspan(1);
 for ii = 1:length(tspan)
     if ii == 1
         oe_vec = oe0;
+        ss_vec = kepl2cart_KZ(oe0, mu);
+
+        oe_vec = oe_vec';
+        ss_vec = ss_vec';
     else
         % Mean anomaly
         M(ii) = wrapTo2Pi(M(ii-1) + dt * sqrt(mu/a^3));
@@ -77,11 +81,13 @@ for ii = 1:length(tspan)
             E(ii) = newE;
         end
 
+        E(ii) = wrapTo2Pi(E(ii));
+
         % True anomaly
         theta(ii) = 2 * atan2(               ...
             sqrt(1+e) * sin(E(ii)/2)     ,   ...
             sqrt(1-e) * cos(E(ii)/2)     );
-
+        
         % Central body distance
         r(ii) = a * ( 1 - e * cos(E(ii)) );
 
@@ -99,19 +105,19 @@ for ii = 1:length(tspan)
         % Transformation into inertial frame
         % Rotation matrices
         Rz_RAAN = [
-               cos(-RAAN)  -sin(-RAAN)    0     ;
-               sin(-RAAN)   cos(-RAAN)    0     ;
-                    0           0         1     ];
+               cos(RAAN)  -sin(RAAN)    0     ;
+               sin(RAAN)   cos(RAAN)    0     ;
+                    0           0         1   ];
 
         Rx_i = [
-                    1           0         0     ;
-                    0       cos(-i)    -sin(-i) ;     
-                    0       sin(-i)     cos(-i) ];
+                    1           0         0    ;
+                    0       cos(i)    -sin(i)  ;     
+                    0       sin(i)     cos(i) ];
 
         Rz_per = [
-               cos(-omega)  -sin(-omega)    0     ;
-               sin(-omega)   cos(-omega)    0     ;
-                    0           0           1     ];
+               cos(omega)  -sin(omega)    0     ;
+               sin(omega)   cos(omega)    0     ;
+                    0           0           1  ];
 
         % Cartesian position in inertial frame
         r_cart    = Rz_RAAN * Rx_i * Rz_per * pos_orb;

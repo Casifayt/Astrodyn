@@ -13,6 +13,12 @@
 
 close all; clear all; clc; format long;
 
+exo = input(['Please select exercise :\n' ...
+    ' 1 for two-body\n' ...
+    ' 2 for J2 \n' ...
+    ' 3 for atmospheric drag \n'...
+    ' 4 for genuine comparison\n']);
+
 %% Constants
 mu = 398600.4418e9;       % Earth gravitational parameter [m^3/s^2]     
 
@@ -59,32 +65,66 @@ theta_ISSd = rad2deg(theta_ISSr);
 oe_ISSd = [a_ISS, e_ISS, i_ISSd, omega_ISSd, RAAN_ISSd, theta_ISSd];
 oe_ISSr = [a_ISS, e_ISS, i_ISSr, omega_ISSr, RAAN_ISSr, theta_ISSr];
 
-% SL3 orbital propagator
-[~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt, 'fmodel', [0 0 0 0 0]);
+
 
 %% Two-body propagator %%
+if exo == 1
+    % SL3 orbital propagator
+    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt, 'fmodel', [0 0 0 0 0]);
 
-% Iterations following Kepler equation
-[~, oe_KEPL, ce_KEPL] = propagator01_KEPL_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
+    % Iterations following Kepler equation
+    % Not working RIP
+    % [~, oe_KEPL, ce_KEPL] = propagator01_KEPL_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
 
-% Numerical integration of Kepler relative motion
-[~, oe_ODE, ce_ODE]  =  propagator01_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
+    % Numerical integration of Kepler relative motion
+    [~, oe_ODE, ce_ODE]  =  propagator01_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
+
+    % Plots comparisons
+%     cartesian_comparison(ce_ODE, ce_SL3, tspan, MATLABc);
+    keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
+
+    % Ground track
+    f = figure;
+    f.Name = ('Ground tracks');
+    f.WindowState = 'maximized';
+    subplot(2,1,1);
+    grdtrk(ce_ODE, 'ODE integration');
+    subplot(2,1,2);
+    grdtrk(ce_SL3, 'SL3 propagator');
 
 
-cartesian_comparison(ce_KEPL, ce_ODE, ce_SL3, tspan, MATLABc);
-
-keplerian_comparison(oe_KEPL, oe_ODE, oe_SL3, tspan, MATLABc);
-
+elseif exo == 2
 
 %% J2-term (Earth's oblateness) %%
 
+    % SL3 orbital propagator
+    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt, 'fmodel', [1 0 0 0 0]);
 
+    % Numerical integration of Kepler relative motion
+    [~, oe_ODE, ce_ODE]  =  propagator02_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
+
+
+    % Plots comparisons
+%     cartesian_comparison(ce_ODE, ce_SL3, tspan, MATLABc);
+    keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
+
+    % Ground track
+    f = figure;
+    f.Name = ('Ground tracks');
+    f.WindowState = 'maximized';
+    subplot(2,1,1);
+    grdtrk(ce_ODE, 'ODE integration');
+    subplot(2,1,2);
+    grdtrk(ce_SL3, 'SL3 propagator');
+
+    
+elseif exo == 3
 %% Earth's atmosphere %%
 
-
+elseif exo == 4
 %% Comparison with actual satellite data %%
 
-
+end
 
 
 
@@ -92,98 +132,88 @@ keplerian_comparison(oe_KEPL, oe_ODE, oe_SL3, tspan, MATLABc);
 
 
 %% Other functions
-function cartesian_comparison(vec_KEPL, vec_ODE, vec_SL3, tspan, MATLABc)
+function cartesian_comparison(vec_ODE, vec_SL3, tspan, MATLABc)
 
 f = figure;
+f.Name = ('Comparison of state-space vectors');
 f.WindowState = 'maximized';
 
 subplot(3,2,1)
-plot( tspan/3600 , vec_KEPL(:,1)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_ODE(:,1)/1000 , 'Color' , MATLABc{2});
-plot( tspan/3600 ,  vec_SL3(:,1)/1000 , 'Color' , MATLABc{3}); 
+plot( tspan/3600 ,  vec_ODE(:,1)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,1)/1000 , 'Color' , MATLABc{2}); 
 title('x'); ylabel('Position [km]'); xlabel('Time [hours]');
 
 subplot(3,2,3)
-plot( tspan/3600 , vec_KEPL(:,2)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_ODE(:,2)/1000 , 'Color' , MATLABc{2});
-plot( tspan/3600 ,  vec_SL3(:,2)/1000 , 'Color' , MATLABc{3}); 
+plot( tspan/3600 ,  vec_ODE(:,2)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,2)/1000 , 'Color' , MATLABc{2}); 
 title('y'); ylabel('Position [km]'); xlabel('Time [hours]');
 
 subplot(3,2,5)
-plot( tspan/3600 , vec_KEPL(:,3)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_ODE(:,3)/1000 , 'Color' , MATLABc{2});
-plot( tspan/3600 ,  vec_SL3(:,3)/1000 , 'Color' , MATLABc{3}); 
+plot( tspan/3600 ,  vec_ODE(:,3)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,3)/1000 , 'Color' , MATLABc{2}); 
 title('z'); ylabel('Position [km]'); xlabel('Time [hours]');
 
 subplot(3,2,2);
-plot( tspan/3600 , vec_KEPL(:,4)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_ODE(:,4)/1000 , 'Color' , MATLABc{2});
-plot( tspan/3600 ,  vec_SL3(:,4)/1000 , 'Color' , MATLABc{3}); 
+plot( tspan/3600 ,  vec_ODE(:,4)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,4)/1000 , 'Color' , MATLABc{2}); 
 title('xdot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
 
 subplot(3,2,4);
-plot( tspan/3600 , vec_KEPL(:,5)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_ODE(:,5)/1000 , 'Color' , MATLABc{2});
-plot( tspan/3600 ,  vec_SL3(:,5)/1000 , 'Color' , MATLABc{3}); 
+plot( tspan/3600 ,  vec_ODE(:,5)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,5)/1000 , 'Color' , MATLABc{2}); 
 title('ydot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
 
 subplot(3,2,6);
-plot( tspan/3600 , vec_KEPL(:,6)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_ODE(:,6)/1000 , 'Color' , MATLABc{2});
-plot( tspan/3600 ,  vec_SL3(:,6)/1000 , 'Color' , MATLABc{3});
+plot( tspan/3600 ,  vec_ODE(:,6)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,6)/1000 , 'Color' , MATLABc{2});
 title('zdot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
 
 
-leg = legend('Kepler propagator', 'ode45 integrator', 'SL3 propagator');
+leg = legend('ode45 integrator', 'SL3 propagator');
 set(leg,'Position', [.455 .01 .125 .075],'Units', 'normalized');
 
 end
 
 
-function keplerian_comparison(vec_KEPL, vec_ODE, vec_SL3, tspan, MATLABc)
+function keplerian_comparison(vec_ODE, vec_SL3, tspan, MATLABc)
 
 f = figure;
+f.Name = ('Comparison of orbital elements');
 f.WindowState = 'maximized';
 
 subplot(3,2,1);
-plot( tspan/3600 , vec_KEPL(:,1)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_ODE(:,1)/1000 , 'Color' , MATLABc{2});
-plot( tspan/3600 ,  vec_SL3(:,1)/1000 , 'Color' , MATLABc{3}); 
+plot( tspan/3600 ,  vec_ODE(:,1)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,1)/1000 , 'Color' , MATLABc{2}); 
 title('Semi-major axis'); ylabel('a [km]'); xlabel('Time [hours]');
 
 subplot(3,2,3);
-plot( tspan/3600 , vec_KEPL(:,2) , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_ODE(:,2) , 'Color' , MATLABc{2});
-plot( tspan/3600 ,  vec_SL3(:,2) , 'Color' , MATLABc{3}); 
+plot( tspan/3600 ,  vec_ODE(:,2) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,2) , 'Color' , MATLABc{2}); 
 title('Eccentricity'); ylabel('e [-]'); xlabel('Time [hours]');
 
 subplot(3,2,5);
-plot( tspan/3600 , rad2deg(vec_KEPL(:,3)) , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  rad2deg(vec_ODE(:,3)) , 'Color' , MATLABc{2});
-plot( tspan/3600 ,           vec_SL3(:,3) , 'Color' , MATLABc{3}); 
+plot( tspan/3600 ,  rad2deg(vec_ODE(:,3)) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,           vec_SL3(:,3) , 'Color' , MATLABc{2}); 
 title('Inclination'); ylabel('i [deg]'); xlabel('Time [hours]');
 
 subplot(3,2,2);
-plot( tspan/3600 , rad2deg(vec_KEPL(:,4)) , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  rad2deg(vec_ODE(:,4)) , 'Color' , MATLABc{2});
-plot( tspan/3600 ,           vec_SL3(:,4) , 'Color' , MATLABc{3}); 
+plot( tspan/3600 ,  rad2deg(vec_ODE(:,4)) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,           vec_SL3(:,4) , 'Color' , MATLABc{2}); 
 title('Argument of perigee'); 
 ylabel('\omega [deg]'); xlabel('Time [hours]');
 
 subplot(3,2,4);
-plot( tspan/3600 , rad2deg(vec_KEPL(:,5)) , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  rad2deg(vec_ODE(:,5)) , 'Color' , MATLABc{2});
-plot( tspan/3600 ,           vec_SL3(:,5) , 'Color' , MATLABc{3}); 
+plot( tspan/3600 ,  rad2deg(vec_ODE(:,5)) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,           vec_SL3(:,5) , 'Color' , MATLABc{2}); 
 title('RAAN'); ylabel('\Omega [deg]'); xlabel('Time [hours]');
 
 subplot(3,2,6);
-plot( tspan/3600 , rad2deg(vec_KEPL(:,6)) , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  rad2deg(vec_ODE(:,6)) , 'Color' , MATLABc{2}); 
-plot( tspan/3600 ,           vec_SL3(:,6) , 'Color' , MATLABc{3});
+plot( tspan/3600 ,  rad2deg(vec_ODE(:,6)) , 'Color' , MATLABc{1});  hold on;
+plot( tspan/3600 ,           vec_SL3(:,6) , 'Color' , MATLABc{2});
 title('True anomaly'); ylabel('\theta [deg]'); xlabel('Time [hours]');
 
 
-leg = legend('Kepler propagator', 'ode45 integrator', 'SL3 propagator');
+leg = legend('ode45 integrator', 'SL3 propagator');
 set(leg,'Position', [.455 .01 .125 .075],'Units', 'normalized');
 
 end
