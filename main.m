@@ -11,10 +11,25 @@
 % This project consists in the development of an orbital propagator 
 % of increasing complexity. The gravitational body is the Earth.
 
+<<<<<<< Updated upstream
 close all; clear all; clc;
+=======
+close all; clear; clc; format long;
+
+exo = input(['Please select exercise :\n' ...
+    ' 1 for two-body\n' ...
+    ' 2 for J2 \n' ...
+    ' 3 for atmospheric drag (TBD) \n'...
+    ' 4 for genuine comparison (TBD) \n']);
+>>>>>>> Stashed changes
 
 %% Constants
-mu = 398600.4418e9;       % Earth gravitational parameter [m^3/s^2]     
+mu = 398600.4418e9;         % Earth gravitational parameter [m^3/s^2]     
+ISS_m = 410500;             % ISS's mass                    [kg]
+ISS_Cd = 2;                 % ISS's drag coefficient        [-]
+ISS_A = 1641;               % ISS's area                    [m^2]
+
+ISS_prop = [ISS_m, ISS_Cd, ISS_A];
 
 % Time properties
 tmax = 86400;
@@ -45,13 +60,107 @@ theta_ISSr = M_ISSr + ...
 
 theta_ISSd = rad2deg(theta_ISSr);
 
+% Initial orbital elements of ISS
+% Degrees
 oe_ISSd = [a_ISS, e_ISS, i_ISSd, omega_ISSd, RAAN_ISSd, theta_ISSd];
+% Radians
 oe_ISSr = [a_ISS, e_ISS, i_ISSr, omega_ISSr, RAAN_ISSr, theta_ISSr];
 
 % SL3 orbital propagator
 [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt);
 
 %% Two-body propagator %%
+<<<<<<< Updated upstream
+=======
+if exo == 1
+    % SL3 orbital propagator
+    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd,...
+        'time',     tmax,           ...     
+        'dt',       dt,             ...     
+        'fmodel',   [0 0 0 0 0]     );      % No perturbation
+
+    % Iterations following Kepler equation
+    % Not working RIP
+    % [~, oe_KEPL, ce_KEPL] = propagator01_KEPL_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
+
+    % Numerical integration of Kepler relative motion
+    [~, oe_ODE, ce_ODE]  =  propagator01_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
+
+    % Plots comparisons
+    keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
+
+    % Ground track
+    f = figure;
+    f.Name = ('Ground tracks');
+    f.WindowState = 'maximized';
+    subplot(2,1,1);
+    grdtrk(ce_ODE, 'ODE integration');
+    subplot(2,1,2);
+    grdtrk(ce_SL3, 'SL3 propagator');
+
+
+elseif exo == 2
+
+%% J2-term (Earth's oblateness) %%
+
+    % SL3 orbital propagator
+    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd,...
+        'time',     tspan(end), ...
+        'dt',       dt,         ...
+        'fmodel',   [1 0 0 0 0] );      % J2 perturbation
+
+    % Numerical integration of Kepler relative motion
+    [~, oe_ODE, ce_ODE]  =  propagator02_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
+
+
+    % Plots comparisons
+    keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
+
+    % Ground track
+    f = figure;
+    f.Name = ('Ground tracks');
+    f.WindowState = 'maximized';
+    subplot(2,1,1);
+    grdtrk(ce_ODE, 'ODE integration');
+    subplot(2,1,2);
+    grdtrk(ce_SL3, 'SL3 propagator');
+
+    
+elseif exo == 3
+%% Earth's atmosphere %%
+    % SL3 orbital propagator
+    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, ...
+        'time',     tspan(end),     ...
+        'dt',       dt,             ...
+        'fmodel',   [1 1 0 0 0],    ...     % J2 and drag perturbations
+        'Cd',       ISS_Cd,         ...     
+        'm',        ISS_m,          ...
+        'Sd',       ISS_A,          ...
+        'density',  1               );
+    
+   [~, oe_ODE, ce_ODE]  =  propagator03_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu, ISS_prop);
+
+    
+    % Plots comparison
+    keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
+    
+    % Ground track
+    f = figure;
+    f.Name = ('Ground tracks');
+    f.WindowState = 'maximized';
+    subplot(2,1,1);
+    grdtrk(ce_ODE, 'ODE integration');
+    subplot(2,1,2);
+    grdtrk(ce_SL3, 'SL3 propagator');
+
+
+elseif exo == 4
+%% Comparison with actual satellite data %%
+
+end
+
+
+>>>>>>> Stashed changes
 
 [~, oe_KEPL, ce_KEPL] = propagator01_KEPL_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
 
