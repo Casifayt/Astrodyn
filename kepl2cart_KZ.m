@@ -1,6 +1,6 @@
 function [ss_vec] = kepl2cart_KZ(oe, mu)
 % This function transforms keplerian elements into cartesian elements
-% test
+% 
 % INPUTS
 %   - oe_vec : Vector of Keplerian elements (1x6) ordered as follows :
 %       - oe_vec(1) : a     - semi-major axis           [m]
