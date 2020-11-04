@@ -13,7 +13,10 @@ function [tspan, oe_vec, ss_vec] = propagator03_ODE_DECHAMPS_FAYT (oe0, tspan, m
 %       - oe0(6) = theta - true anomaly             [rad]
 %   - tspan     : Vector of time properties         [s]
 %   - mu        : Gravitational body parameter      [km^3/s^2]
-%   - ISS_prop  : Array of the ISS properties       [various]
+%   - ISS_prop  : Array of the ISS properties ordered as :
+%       - ISS_prop(1) = m   - Mass                  [kg]
+%       - ISS_prop(2) = Cd  - Drag coefficient      [-]
+%       - ISS_prop(3) = S   - Area                  [m^2]
 % 
 % OUTPUTS
 %   - tspan     : Vector of time properties         [s]
@@ -149,7 +152,6 @@ M_sph2cart = [
 A = M_sph2cart * A_sph;
 
 
-
 m_ISS = ISS_prop(1);
 Cd_ISS = ISS_prop(2);
 S_ref_ISS = ISS_prop(3);
@@ -165,9 +167,11 @@ vtas = rdot + cross(ss_vec(1:3), earth_ang_vel);
 rho_atm = harris_priester(ss_vec(1:3));
 
 f_atm_norm = .5 * Cd_ISS * S_ref_ISS * rho_atm * vtas^2 / m_ISS;
+
 f_atm = - f_atm_norm * vel_vec_unitary;
 
 A = A + f_atm;
+
 
 end
 

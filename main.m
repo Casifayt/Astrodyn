@@ -54,7 +54,7 @@ M_ISSr = deg2rad(M_ISSd);           % Mean anomaly      [rad]
 % Fourier expansion from wikipedia
 % See https://en.wikipedia.org/wiki/True_anomaly#From_the_mean_anomaly
 theta_ISSr = M_ISSr + ...
-    (2*e_ISS - e_ISS^3/4) * sin(M_ISSr) ...
+    (2*e_ISS - e_ISS^3/4) * sin(M_ISSr)   ...
     + 5/4   * e_ISS^2 * sin(2 * M_ISSr)   ...
     + 13/12 * e_ISS^3 * sin(3 * M_ISSr);
 
@@ -66,18 +66,31 @@ oe_ISSd = [a_ISS, e_ISS, i_ISSd, omega_ISSd, RAAN_ISSd, theta_ISSd];
 % Radians
 oe_ISSr = [a_ISS, e_ISS, i_ISSr, omega_ISSr, RAAN_ISSr, theta_ISSr];
 
+<<<<<<< Updated upstream
 % SL3 orbital propagator
 [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt);
+=======
+m_ISS = 410500;         % Mass of ISS [kg]
+Cd_ISS = 2.00;          % Cd of ISS [-]
+A_ISS = 1641;           % Surface of ISS [m^2]
+
+ISS_prop = [ m_ISS Cd_ISS A_ISS];
+>>>>>>> Stashed changes
 
 %% Two-body propagator %%
 <<<<<<< Updated upstream
 =======
 if exo == 1
     % SL3 orbital propagator
+<<<<<<< Updated upstream
     [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd,...
         'time',     tmax,           ...     
         'dt',       dt,             ...     
         'fmodel',   [0 0 0 0 0]     );      % No perturbation
+=======
+    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt,...
+        'fmodel', [0 0 0 0 0]);
+>>>>>>> Stashed changes
 
     % Iterations following Kepler equation
     % Not working RIP
@@ -104,13 +117,19 @@ elseif exo == 2
 %% J2-term (Earth's oblateness) %%
 
     % SL3 orbital propagator
+<<<<<<< Updated upstream
     [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd,...
         'time',     tspan(end), ...
         'dt',       dt,         ...
         'fmodel',   [1 0 0 0 0] );      % J2 perturbation
+=======
+    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt,...
+        'fmodel', [1 0 0 0 0]);
+>>>>>>> Stashed changes
 
     % Numerical integration of Kepler relative motion
-    [~, oe_ODE, ce_ODE]  =  propagator02_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
+    [~, oe_ODE, ce_ODE]  =  propagator02_ODE_DECHAMPS_FAYT(...
+        oe_ISSr, tspan, mu);
 
 
     % Plots comparisons
@@ -128,6 +147,7 @@ elseif exo == 2
     
 elseif exo == 3
 %% Earth's atmosphere %%
+<<<<<<< Updated upstream
     % SL3 orbital propagator
     [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, ...
         'time',     tspan(end),     ...
@@ -144,6 +164,25 @@ elseif exo == 3
     % Plots comparison
     keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
     
+=======
+    
+    % SL3 orbital propagator
+    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, ...
+        'time', tmax, 'dt', dt,...
+        'fmodel', [1 1 0 0 0], ...
+        'density', 1, ...
+        'Cd', Cd_ISS, ...
+        'm', m_ISS, ...
+        'Sd', A_ISS);
+
+    % Numerical integration of Kepler relative motion
+    [~, oe_ODE, ce_ODE]  =  propagator03_ODE_DECHAMPS_FAYT(...
+        oe_ISSr, tspan, mu, ISS_prop);
+
+    % Plots comparisons
+    keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
+
+>>>>>>> Stashed changes
     % Ground track
     f = figure;
     f.Name = ('Ground tracks');
@@ -152,7 +191,10 @@ elseif exo == 3
     grdtrk(ce_ODE, 'ODE integration');
     subplot(2,1,2);
     grdtrk(ce_SL3, 'SL3 propagator');
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 
 elseif exo == 4
 %% Comparison with actual satellite data %%
