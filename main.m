@@ -65,7 +65,13 @@ theta_ISSd = rad2deg(theta_ISSr);
 oe_ISSd = [a_ISS, e_ISS, i_ISSd, omega_ISSd, RAAN_ISSd, theta_ISSd];
 oe_ISSr = [a_ISS, e_ISS, i_ISSr, omega_ISSr, RAAN_ISSr, theta_ISSr];
 
+%% ISS Ballistic Properties
 
+m_ISS = 410500;                     % Mass of the ISS [kg]
+Cd = 2;                             % Drag coefficient [-]
+A = 1641;                       % Cross-section of the ISS [m^2]
+
+ISS_prop = [m_ISS, Cd, A];
 
 %% Two-body propagator %%
 if exo == 1
@@ -120,6 +126,26 @@ elseif exo == 2
     
 elseif exo == 3
 %% Earth's atmosphere %%
+
+    % SL3 orbital propagator
+    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt, 'fmodel', [1 1 0 0 0]);
+
+    % Numerical integration of Kepler relative motion
+    [~, oe_ODE, ce_ODE]  =  propagator03_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu, ISS_prop);
+
+
+    % Plots comparisons
+%     cartesian_comparison(ce_ODE, ce_SL3, tspan, MATLABc);
+    keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
+
+    % Ground track
+    f = figure;
+    f.Name = ('Ground tracks');
+    f.WindowState = 'maximized';
+    subplot(2,1,1);
+    grdtrk(ce_ODE, 'ODE integration');
+    subplot(2,1,2);
+    grdtrk(ce_SL3, 'SL3 propagator');
 
 elseif exo == 4
 %% Comparison with actual satellite data %%

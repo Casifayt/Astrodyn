@@ -128,7 +128,7 @@ accel_rad = mu  / 2 / r^4 * (   ...
     - 2 * r^2               );
 
 % Acceleration in azimuthal direction
-accel_azi =  3 * mu * J2 * R^2 * sp * cp / r^3;
+accel_azi =  3 * mu * J2 * R^2 * sp * cp / r^4;
 
 % Acceleration field in spherical coordinates
 A_sph = [ 
@@ -159,12 +159,16 @@ rdot = norm(vel_vec);
 vel_vec_unitary = vel_vec / rdot;
 
 earth_ang_vel = 2*pi/86400;
+earth_ang_vel = [0, 0, earth_ang_vel];
 
-vtas = rdot + cross(ss_vec(1:3), earth_ang_vel);
+% If the Matlab command "cross" is applied to vectors, they must have a 
+% length of 3.
+
+vtas = rdot + cross(ss_vec(1:3), earth_ang_vel); 
 
 rho_atm = harris_priester(ss_vec(1:3));
 
-f_atm_norm = .5 * Cd_ISS * S_ref_ISS * rho_atm * vtas^2 / m_ISS;
+f_atm_norm = .5 * Cd_ISS * S_ref_ISS * rho_atm * vtas.^2 / m_ISS;
 f_atm = - f_atm_norm * vel_vec_unitary;
 
 A = A + f_atm;
@@ -180,10 +184,9 @@ function rho = harris_priester(pos_vec)
 % Initialise Harris-Priester data
 HP_tab = harris_priester_init;
 
-
 R = 6371900;            % Earth's average radius (UGGI)     [m]
 
-h = norm(pos_vec) - R;  % Satellite's height            [m]
+h = norm(pos_vec) - R  % Satellite's height            [m]
 
 i = 1;
 
@@ -192,7 +195,13 @@ if h < HP_tab(1,1)
 else
     while HP_tab(i,1) < h
         i = i + 1;
-    end
+        
+        if i > 50   % PROBLEM (h becomes larger and larger over each iteration...)
+            i = 50;
+            break
+        end
+        
+    end    
 end
 
 hi = HP_tab(i-1,1);
