@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% AERO0024 - ASTRODYNAMICS %%%
 %%%%%% ULiège - 2020-2021 %%%%%%
-test
+
 %%% Authors
 % Axel DECHAMPS - S164160
 % Casimir  FAYT - S196244

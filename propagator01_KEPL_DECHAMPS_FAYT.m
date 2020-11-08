@@ -1,7 +1,7 @@
 function [tspan, oe_vec, ss_vec] = propagator01_KEPL_DECHAMPS_FAYT(oe0, tspan, mu)
 % This function computes the evolution of the orbital elements by solving the
 % Kepler equation, using the Newton-Raphson method
-% test
+% 
 % Cécile equation
 %       M(t) = E(t) - e * sin(E);
 % 
