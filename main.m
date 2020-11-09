@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% AERO0024 - ASTRODYNAMICS %%%
-%%%%%% ULiège - 2020-2021 %%%%%%
+%%%%%% ULiÃ¨ge - 2020-2021 %%%%%%
 
 %%% Authors
 % Axel DECHAMPS - S164160
@@ -11,7 +11,7 @@
 % This project consists in the development of an orbital propagator 
 % of increasing complexity. The central body is the Earth.
 
-close all; clear all; clc; format long;
+close all; clear; clc; format long;
 
 exo = input(['Please select exercise :\n' ...
     ' 1 for two-body\n' ...
@@ -20,7 +20,12 @@ exo = input(['Please select exercise :\n' ...
     ' 4 for genuine comparison (TBD) \n']);
 
 %% Constants
-mu = 398600.4418e9;       % Earth gravitational parameter [m^3/s^2]     
+mu = 398600.4418e9;         % Earth gravitational parameter [m^3/s^2]     
+ISS_m = 410500;             % ISS's mass                    [kg]
+ISS_Cd = 2;                 % ISS's drag coefficient        [-]
+ISS_A = 1641;               % ISS's area                    [m^2]
+
+ISS_prop = [ISS_m, ISS_Cd, ISS_A];
 
 MATLABc = {
     [0, 0.4470, 0.7410];
@@ -56,21 +61,27 @@ M_ISSr = deg2rad(M_ISSd);           % Mean anomaly      [rad]
 % Fourier expansion from wikipedia
 % See https://en.wikipedia.org/wiki/True_anomaly#From_the_mean_anomaly
 theta_ISSr = M_ISSr + ...
-    (2*e_ISS - e_ISS^3/4) * sin(M_ISSr) ...
+    (2*e_ISS - e_ISS^3/4) * sin(M_ISSr)   ...
     + 5/4   * e_ISS^2 * sin(2 * M_ISSr)   ...
     + 13/12 * e_ISS^3 * sin(3 * M_ISSr);
 
 theta_ISSd = rad2deg(theta_ISSr);
 
+% Initial orbital elements of ISS
+% Degrees
 oe_ISSd = [a_ISS, e_ISS, i_ISSd, omega_ISSd, RAAN_ISSd, theta_ISSd];
+% Radians
 oe_ISSr = [a_ISS, e_ISS, i_ISSr, omega_ISSr, RAAN_ISSr, theta_ISSr];
-
 
 
 %% Two-body propagator %%
 if exo == 1
     % SL3 orbital propagator
-    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt, 'fmodel', [0 0 0 0 0]);
+
+    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd,...
+        'time',     tmax,           ...     
+        'dt',       dt,             ...     
+        'fmodel',   [0 0 0 0 0]     );      % No perturbation
 
     % Iterations following Kepler equation
     % Not working RIP
@@ -98,14 +109,18 @@ elseif exo == 2
 %% J2-term (Earth's oblateness) %%
 
     % SL3 orbital propagator
-    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt, 'fmodel', [1 0 0 0 0]);
+    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd,...
+        'time',     tspan(end), ...
+        'dt',       dt,         ...
+        'fmodel',   [1 0 0 0 0] );      % J2 perturbation
+
 
     % Numerical integration of Kepler relative motion
-    [~, oe_ODE, ce_ODE]  =  propagator02_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
+    [~, oe_ODE, ce_ODE]  =  propagator02_ODE_DECHAMPS_FAYT(...
+        oe_ISSr, tspan, mu);
 
 
     % Plots comparisons
-%     cartesian_comparison(ce_ODE, ce_SL3, tspan, MATLABc);
     keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
 
     % Ground track
@@ -120,14 +135,37 @@ elseif exo == 2
     
 elseif exo == 3
 %% Earth's atmosphere %%
+    % SL3 orbital propagator
+    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, ...
+        'time',     tspan(end),     ...
+        'dt',       dt,             ...
+        'fmodel',   [1 1 0 0 0],    ...     % J2 and drag perturbations
+        'Cd',       ISS_Cd,         ...     
+        'm',        ISS_m,          ...
+        'Sd',       ISS_A,          ...
+        'density',  1               );
+
+
+    % Numerical integration of Kepler relative motion
+    [~, oe_ODE, ce_ODE]  =  propagator03_ODE_DECHAMPS_FAYT(...
+        oe_ISSr, tspan, mu, ISS_prop);
+
+    % Plots comparisons
+    keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
+
+    % Ground track
+    f = figure;
+    f.Name = ('Ground tracks');
+    f.WindowState = 'maximized';
+    subplot(2,1,1);
+    grdtrk(ce_ODE, 'ODE integration');
+    subplot(2,1,2);
+    grdtrk(ce_SL3, 'SL3 propagator');
 
 elseif exo == 4
 %% Comparison with actual satellite data %%
 
 end
-
-
-
 
 
 

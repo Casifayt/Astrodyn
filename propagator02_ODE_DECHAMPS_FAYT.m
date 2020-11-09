@@ -105,7 +105,7 @@ the = atan2(vec(2),vec(1));         % Polar angle           [rad]
 
 % Direction cosines
 sp = sin(phi); cp = cos(phi);
-st = sin(the); ct =  cos(the);
+st = sin(the); ct = cos(the);
 
 % Gradient of potential field could have been computed following :
 % syms r_var phi_var
