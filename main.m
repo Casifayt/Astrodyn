@@ -11,17 +11,13 @@
 % This project consists in the development of an orbital propagator 
 % of increasing complexity. The gravitational body is the Earth.
 
-<<<<<<< Updated upstream
 close all; clear all; clc;
-=======
-close all; clear; clc; format long;
 
 exo = input(['Please select exercise :\n' ...
     ' 1 for two-body\n' ...
     ' 2 for J2 \n' ...
     ' 3 for atmospheric drag (TBD) \n'...
     ' 4 for genuine comparison (TBD) \n']);
->>>>>>> Stashed changes
 
 %% Constants
 mu = 398600.4418e9;         % Earth gravitational parameter [m^3/s^2]     
@@ -66,16 +62,11 @@ oe_ISSd = [a_ISS, e_ISS, i_ISSd, omega_ISSd, RAAN_ISSd, theta_ISSd];
 % Radians
 oe_ISSr = [a_ISS, e_ISS, i_ISSr, omega_ISSr, RAAN_ISSr, theta_ISSr];
 
-<<<<<<< Updated upstream
-% SL3 orbital propagator
-[~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt);
-=======
 m_ISS = 410500;         % Mass of ISS [kg]
 Cd_ISS = 2.00;          % Cd of ISS [-]
 A_ISS = 1641;           % Surface of ISS [m^2]
 
 ISS_prop = [ m_ISS Cd_ISS A_ISS];
->>>>>>> Stashed changes
 
 %% Two-body propagator %%
 <<<<<<< Updated upstream
