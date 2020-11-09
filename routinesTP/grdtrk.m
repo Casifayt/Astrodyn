@@ -1,4 +1,4 @@
-function grdtrk(xECEF)
+function grdtrk(xECEF, str)
 
 % 
 % This function display the ground track of the spacecraft.
@@ -37,7 +37,7 @@ end
 set(0, 'defaultaxesfontsize', 16);
 set(0, 'defaulttextfontsize', 16);
 
-figure;
+
 box on;
 axis on;
 view(0, 90);
@@ -49,15 +49,15 @@ grid on;
 plot3(LON, LAT, Hgdtrk, 'r', 'linewidth', 0.2);
 inizio = plot3(LON(1), LAT(1), Hgdtrk(1), 's', ...
     'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 5);
-fine = plot3(LON(end), LAT(end), Hgdtrk(end), 's', ...
-    'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'c', 'MarkerSize', 5);
+fine = plot3(LON(end), LAT(end), Hgdtrk(end), 'o', ...
+    'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 5);
 xlabel('Longitude [deg]');
 ylabel('Latitude [deg]');
 zlabel('Altitude [km]');
 xlim([-180 180]);
 ylim([-90 90]);
 legend([inizio, fine], 'Start', 'End');
-title('Ground track');
+title(['Ground track - ' str]);
 set(gca, 'xtick', -180 : 60 : 180, 'ytick', -90 : 30 : 90);
 hold off;
 

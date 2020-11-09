@@ -32,9 +32,6 @@ theta = oe(6);
 % Eccentric anomaly
 E = 2 * atan2 ( sqrt(1-e) * sin(theta/2), sqrt(1+e) * cos(theta/2) );
 
-% Mean anomaly
-M = E - e * sin(E);
-
 % Central body distance
 r = a * ( 1 - e * cos(E) );
 
@@ -52,19 +49,19 @@ vel_orb = sqrt(mu * a) / r * [
 % Transformation into inertial frame
 % Rotation matrices
 Rz_RAAN = [
-       cos(-RAAN)  -sin(-RAAN)    0     ;
-       sin(-RAAN)   cos(-RAAN)    0     ;
-            0           0         1     ];
+       cos(RAAN)  -sin(RAAN)    0       ;
+       sin(RAAN)   cos(RAAN)    0       ;
+            0           0         1    ];
 
 Rx_i = [
-            1           0         0     ;
-            0       cos(-i)    -sin(-i) ;     
-            0       sin(-i)     cos(-i) ];
+            1           0         0     ; 
+            0       cos(i)    -sin(i)   ;     
+            0       sin(i)     cos(i)  ];
 
 Rz_per = [
-       cos(-omega)  -sin(-omega)    0     ;
-       sin(-omega)   cos(-omega)    0     ;
-            0           0           1     ];
+       cos(omega)  -sin(omega)    0     ;
+       sin(omega)   cos(omega)    0     ;
+            0           0         1    ];
 
 % Cartesian position in inertial frame
 r_cart    = Rz_RAAN * Rx_i * Rz_per * pos_orb;

@@ -151,7 +151,6 @@ M_sph2cart = [
 % Acceleration field in cartesian coordinates
 A = M_sph2cart * A_sph;
 
-
 m_ISS = ISS_prop(1);
 Cd_ISS = ISS_prop(2);
 S_ref_ISS = ISS_prop(3);
@@ -167,11 +166,9 @@ vtas = rdot + cross(ss_vec(1:3), earth_ang_vel);
 rho_atm = harris_priester(ss_vec(1:3));
 
 f_atm_norm = .5 * Cd_ISS * S_ref_ISS * rho_atm * vtas^2 / m_ISS;
-
 f_atm = - f_atm_norm * vel_vec_unitary;
 
 A = A + f_atm;
-
 
 end
 

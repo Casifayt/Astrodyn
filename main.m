@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% AERO0024 - ASTRODYNAMICS %%%
-%%%%%% ULiège - 2020-2021 %%%%%%
+%%%%%% ULiÃ¨ge - 2020-2021 %%%%%%
 
 %%% Authors
 % Axel DECHAMPS - S164160
@@ -9,9 +9,9 @@
 
 %%%%%% Orbital propagator %%%%%%
 % This project consists in the development of an orbital propagator 
-% of increasing complexity. The gravitational body is the Earth.
+% of increasing complexity. The central body is the Earth.
 
-close all; clear all; clc;
+close all; clear; clc; format long;
 
 exo = input(['Please select exercise :\n' ...
     ' 1 for two-body\n' ...
@@ -26,6 +26,17 @@ ISS_Cd = 2;                 % ISS's drag coefficient        [-]
 ISS_A = 1641;               % ISS's area                    [m^2]
 
 ISS_prop = [ISS_m, ISS_Cd, ISS_A];
+
+MATLABc = {
+    [0, 0.4470, 0.7410];
+    [0.8500, 0.3250, 0.0980];
+    [0.9290, 0.6940, 0.1250];
+    [0.4940, 0.1840, 0.5560];
+    [0.4660, 0.6740, 0.1880];
+    [0.3010, 0.7450, 0.9330];
+    [0.6350, 0.0780, 0.1840];
+    };
+    
 
 % Time properties
 tmax = 86400;
@@ -62,26 +73,15 @@ oe_ISSd = [a_ISS, e_ISS, i_ISSd, omega_ISSd, RAAN_ISSd, theta_ISSd];
 % Radians
 oe_ISSr = [a_ISS, e_ISS, i_ISSr, omega_ISSr, RAAN_ISSr, theta_ISSr];
 
-m_ISS = 410500;         % Mass of ISS [kg]
-Cd_ISS = 2.00;          % Cd of ISS [-]
-A_ISS = 1641;           % Surface of ISS [m^2]
-
-ISS_prop = [ m_ISS Cd_ISS A_ISS];
 
 %% Two-body propagator %%
-<<<<<<< Updated upstream
-=======
 if exo == 1
     % SL3 orbital propagator
-<<<<<<< Updated upstream
+
     [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd,...
         'time',     tmax,           ...     
         'dt',       dt,             ...     
         'fmodel',   [0 0 0 0 0]     );      % No perturbation
-=======
-    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt,...
-        'fmodel', [0 0 0 0 0]);
->>>>>>> Stashed changes
 
     % Iterations following Kepler equation
     % Not working RIP
@@ -91,6 +91,7 @@ if exo == 1
     [~, oe_ODE, ce_ODE]  =  propagator01_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
 
     % Plots comparisons
+%     cartesian_comparison(ce_ODE, ce_SL3, tspan, MATLABc);
     keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
 
     % Ground track
@@ -108,15 +109,11 @@ elseif exo == 2
 %% J2-term (Earth's oblateness) %%
 
     % SL3 orbital propagator
-<<<<<<< Updated upstream
     [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd,...
         'time',     tspan(end), ...
         'dt',       dt,         ...
         'fmodel',   [1 0 0 0 0] );      % J2 perturbation
-=======
-    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt,...
-        'fmodel', [1 0 0 0 0]);
->>>>>>> Stashed changes
+
 
     % Numerical integration of Kepler relative motion
     [~, oe_ODE, ce_ODE]  =  propagator02_ODE_DECHAMPS_FAYT(...
@@ -138,7 +135,6 @@ elseif exo == 2
     
 elseif exo == 3
 %% Earth's atmosphere %%
-<<<<<<< Updated upstream
     % SL3 orbital propagator
     [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, ...
         'time',     tspan(end),     ...
@@ -148,23 +144,7 @@ elseif exo == 3
         'm',        ISS_m,          ...
         'Sd',       ISS_A,          ...
         'density',  1               );
-    
-   [~, oe_ODE, ce_ODE]  =  propagator03_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu, ISS_prop);
 
-    
-    % Plots comparison
-    keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
-    
-=======
-    
-    % SL3 orbital propagator
-    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, ...
-        'time', tmax, 'dt', dt,...
-        'fmodel', [1 1 0 0 0], ...
-        'density', 1, ...
-        'Cd', Cd_ISS, ...
-        'm', m_ISS, ...
-        'Sd', A_ISS);
 
     % Numerical integration of Kepler relative motion
     [~, oe_ODE, ce_ODE]  =  propagator03_ODE_DECHAMPS_FAYT(...
@@ -173,7 +153,6 @@ elseif exo == 3
     % Plots comparisons
     keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
 
->>>>>>> Stashed changes
     % Ground track
     f = figure;
     f.Name = ('Ground tracks');
@@ -182,10 +161,6 @@ elseif exo == 3
     grdtrk(ce_ODE, 'ODE integration');
     subplot(2,1,2);
     grdtrk(ce_SL3, 'SL3 propagator');
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 
 elseif exo == 4
 %% Comparison with actual satellite data %%
@@ -193,55 +168,92 @@ elseif exo == 4
 end
 
 
->>>>>>> Stashed changes
 
-[~, oe_KEPL, ce_KEPL] = propagator01_KEPL_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
+%% Other functions
+function cartesian_comparison(vec_ODE, vec_SL3, tspan, MATLABc)
 
-[~, oe_ODE, ce_ODE]  =  propagator01_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
+f = figure;
+f.Name = ('Comparison of state-space vectors');
+f.WindowState = 'maximized';
 
-figure;
 subplot(3,2,1)
-plot(tspan,ce_KEPL(:,1),'r'); hold on;
-plot(tspan,ce_ODE(:,1),'b');
-plot(tspan,ce_SL3(:,1),'k'); title('x');
+plot( tspan/3600 ,  vec_ODE(:,1)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,1)/1000 , 'Color' , MATLABc{2}); 
+title('x'); ylabel('Position [km]'); xlabel('Time [hours]');
 
 subplot(3,2,3)
-plot(tspan,ce_KEPL(:,2),'r'); hold on;
-plot(tspan,ce_ODE(:,2),'b');
-plot(tspan,ce_SL3(:,2),'k'); title('y');
+plot( tspan/3600 ,  vec_ODE(:,2)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,2)/1000 , 'Color' , MATLABc{2}); 
+title('y'); ylabel('Position [km]'); xlabel('Time [hours]');
 
 subplot(3,2,5)
-plot(tspan,ce_KEPL(:,3),'r'); hold on;
-plot(tspan,ce_ODE(:,3),'b');
-plot(tspan,ce_SL3(:,3),'k'); title('z');
+plot( tspan/3600 ,  vec_ODE(:,3)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,3)/1000 , 'Color' , MATLABc{2}); 
+title('z'); ylabel('Position [km]'); xlabel('Time [hours]');
 
 subplot(3,2,2);
-plot(tspan,ce_KEPL(:,4),'r'); hold on;
-plot(tspan,ce_ODE(:,4),'b');
-plot(tspan,ce_SL3(:,4),'k'); title('xdot');
+plot( tspan/3600 ,  vec_ODE(:,4)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,4)/1000 , 'Color' , MATLABc{2}); 
+title('xdot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
 
 subplot(3,2,4);
-plot(tspan,ce_KEPL(:,5),'r'); hold on;
-plot(tspan,ce_ODE(:,5),'b');
-plot(tspan,ce_SL3(:,5),'k'); title('ydot');
+plot( tspan/3600 ,  vec_ODE(:,5)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,5)/1000 , 'Color' , MATLABc{2}); 
+title('ydot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
 
 subplot(3,2,6);
-plot(tspan,ce_KEPL(:,6),'r'); hold on;
-plot(tspan,ce_ODE(:,6),'b');
-plot(tspan,ce_SL3(:,6),'k'); title('zdot');
+plot( tspan/3600 ,  vec_ODE(:,6)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,6)/1000 , 'Color' , MATLABc{2});
+title('zdot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
 
 
+leg = legend('ode45 integrator', 'SL3 propagator');
+set(leg,'Position', [.455 .01 .125 .075],'Units', 'normalized');
+
+end
 
 
-%% J2-term(Earth's oblateness) %%
+function keplerian_comparison(vec_ODE, vec_SL3, tspan, MATLABc)
+
+f = figure;
+f.Name = ('Comparison of orbital elements');
+f.WindowState = 'maximized';
+
+subplot(3,2,1);
+plot( tspan/3600 ,  vec_ODE(:,1)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,1)/1000 , 'Color' , MATLABc{2}); 
+title('Semi-major axis'); ylabel('a [km]'); xlabel('Time [hours]');
+
+subplot(3,2,3);
+plot( tspan/3600 ,  vec_ODE(:,2) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,2) , 'Color' , MATLABc{2}); 
+title('Eccentricity'); ylabel('e [-]'); xlabel('Time [hours]');
+
+subplot(3,2,5);
+plot( tspan/3600 ,  rad2deg(vec_ODE(:,3)) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,           vec_SL3(:,3) , 'Color' , MATLABc{2}); 
+title('Inclination'); ylabel('i [deg]'); xlabel('Time [hours]');
+
+subplot(3,2,2);
+plot( tspan/3600 ,  rad2deg(vec_ODE(:,4)) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,           vec_SL3(:,4) , 'Color' , MATLABc{2}); 
+title('Argument of perigee'); 
+ylabel('\omega [deg]'); xlabel('Time [hours]');
+
+subplot(3,2,4);
+plot( tspan/3600 ,  rad2deg(vec_ODE(:,5)) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,           vec_SL3(:,5) , 'Color' , MATLABc{2}); 
+title('RAAN'); ylabel('\Omega [deg]'); xlabel('Time [hours]');
+
+subplot(3,2,6);
+plot( tspan/3600 ,  rad2deg(vec_ODE(:,6)) , 'Color' , MATLABc{1});  hold on;
+plot( tspan/3600 ,           vec_SL3(:,6) , 'Color' , MATLABc{2});
+title('True anomaly'); ylabel('\theta [deg]'); xlabel('Time [hours]');
 
 
-%% Earth's atmosphere %%
+leg = legend('ode45 integrator', 'SL3 propagator');
+set(leg,'Position', [.455 .01 .125 .075],'Units', 'normalized');
 
-
-%% Comparison with actual satellite data %%
-
-
-
+end
 
 
