@@ -60,6 +60,11 @@ for ii = 1:N
     end
 
     %% Argument of perigee
+    
+    % Vector with direction corresponding to apse line
+    apse = cross(v,h) / mu - r / rnorm;
+    apsenorm = norm(apse);
+    
     omega = acos ( dot(n, apse)  / nnorm / apsenorm );
     if dot(apse,K) < 0
         omega = 2 * pi - omega;

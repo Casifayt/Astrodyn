@@ -38,6 +38,13 @@ options = odeset('RelTol',1e-8,'AbsTol',1e-8);
 % Transformation to orbital elements
 oe_vec = cart2kepl_KZ(ss_vec', mu)';
 
+geo_vec = zeros(length(ss_vec),3);
+
+for i = 1:length(ss_vec)
+     [h, lambda, phi] = ecef2geodetic([ss_vec(i,1); ss_vec(i,2); ss_vec(i,3)]);
+     geo_vec(i,:) = [h rad2deg(lambda) rad2deg(phi)];
+end    
+
 end
 
 function ddt = keplereq3D(~, data, mu, ISS_prop)
@@ -100,7 +107,8 @@ function A = accel_field(ss_vec, mu, ISS_prop)
 
 % Constants
 R = 6371900;            % Earth's average radius (UGGI)     [m]
-J2 = 1.082629e-3;       % Adimensional J2 term              [-]
+% J2 = 1.082629e-3;       % Adimensional J2 term              [-]
+J = 1.082629e-3;       % Adimensional J2 term              [-]
 
 % Spherical coordinates
 r = norm(ss_vec(1:3));                  % Radius                [m]
@@ -122,13 +130,17 @@ st = sin(the); ct = cos(the);
 
 
 % Acceleration in radial direction
-accel_rad = mu  / 2 / r^4 * (   ...
-      9 * J2 * R^2 * sp^2       ...
-    - 3 * J2 * R^2              ...
-    - 2 * r^2               );
+% accel_rad = mu  / 2 / r^4 * (   ...
+%       9 * J2 * R^2 * sp^2       ...
+%     - 3 * J2 * R^2              ...
+%     - 2 * r^2               );
+
+accel_rad = - 3/2 * J * mu / r^2 * (R/r)^2 * (3 * cp^2 - 1);
 
 % Acceleration in azimuthal direction
-accel_azi =  3 * mu * J2 * R^2 * sp * cp / r^4;
+% accel_azi =  3 * mu * J2 * R^2 * sp * cp / r^4;
+
+accel_azi = -3/2 * J * mu / r^2 * (R/r)^2 * sp * cp;
 
 % Acceleration field in spherical coordinates
 A_sph = [ 
@@ -147,6 +159,14 @@ M_sph2cart = [
 
 % Acceleration field in cartesian coordinates
 A = M_sph2cart * A_sph;
+
+A = - mu / r^3 * [ss_vec(1); ss_vec(2); ss_vec(3)]  ...
++ 3/2 * J * mu * R^2 / r^4 * [...
+    ss_vec(1)/r * (5 * ss_vec(3)^2 / r^2 - 1) ;
+    ss_vec(2)/r * (5 * ss_vec(3)^2 / r^2 - 1) ;
+    ss_vec(3)/r * (5 * ss_vec(3)^2 / r^2 - 3) ;];
+
+
 
 
 
@@ -293,4 +313,74 @@ tab(:,1) = tab(:,1) * 1e3;
 tab(:,2:3) = tab(:,2:3) * 1e-12;
 
 end
+
+function [h, lambda, phi] = ecef2geodetic(rECEF)
+
+% 
+% [h, lambda, phi] = ecef2geodetic(rECEF)
+% 
+% Provide the geodetic coordinates of a position vector in the ECEF frame.
+% 
+% Inputs:
+%   - rECEF = 3-element column vector defining a position in the ECEF frame
+%            [m]
+% 
+% Outputs:
+%   - h = altitude from the reference ellipsoid [m]
+%   - lambda = geodetic longitude [rad]
+%   - phi = geodetic latitude [rad]
+% 
+% Ref: MATLAB function ecef2geodetic.
+% 
+% Lamberto Dell'Elce
+% 
+
+persistent a e2 ep2 f b
+
+if isempty(a),
+    % Ellipsoid constants
+    a  = 6378.137e3; % Semimajor axis
+    e2 = 0.081819190842^2; % Square of first eccentricity
+    ep2 = e2 / (1 - e2); % Square of second eccentricity
+    f = 1 - sqrt(1 - e2); % Flattening
+    b = a * (1 - f); % Semiminor axis
+end
+
+x = rECEF(1);
+y = rECEF(2);
+z = rECEF(3);
+
+%% Longitude
+lambda = atan2(y,x); % [rad]
+
+%% Latitude
+% Distance from Z-axis
+RHO = hypot(x,y);
+
+% Bowring's formula for initial parametric (beta) and geodetic (phi)
+% latitudes
+beta = atan2(z, (1 - f) * RHO);
+phi = atan2(z   + b * ep2 * sin(beta)^3,...
+            RHO - a * e2  * cos(beta)^3);
+
+% Fixed-point iteration with Bowring's formula
+% (typically converges within two or three iterations)
+betaNew = atan2((1 - f)*sin(phi), cos(phi));
+count = 0;
+while any(beta(:) ~= betaNew(:)) && count < 5
+    beta = betaNew;
+    phi = atan2(z + b * ep2 * sin(beta)^3, ...
+        RHO - a * e2  * cos(beta).^3); % [rad]
+    betaNew = atan2((1 - f)*sin(phi), cos(phi));
+    count = count + 1;
+end
+
+%% Altitude
+% Calculate ellipsoidal height from the final value for latitude
+sin_phi = sin(phi);
+N = a / sqrt(1 - e2 * sin_phi^2);
+h = RHO * cos(phi) + (z + e2 * N * sin_phi) * sin_phi - N; % [m]
+
+end
+
 
