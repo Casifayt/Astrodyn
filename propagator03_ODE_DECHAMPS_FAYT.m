@@ -186,7 +186,7 @@ HP_tab = harris_priester_init;
 
 R = 6371900;            % Earth's average radius (UGGI)     [m]
 
-h = norm(pos_vec) - R  % Satellite's height            [m]
+h = norm(pos_vec) - R;  % Satellite's height            [m]
 
 i = 1;
 
@@ -194,13 +194,7 @@ if h < HP_tab(1,1)
     error('Altitude too low');
 else
     while HP_tab(i,1) < h
-        i = i + 1;
-        
-        if i > 50   % PROBLEM (h becomes larger and larger over each iteration...)
-            i = 50;
-            break
-        end
-        
+        i = i + 1;        
     end    
 end
 
