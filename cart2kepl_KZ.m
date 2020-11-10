@@ -31,15 +31,15 @@ oe_vec = zeros(6,N);
 for ii = 1:N
 
     %% Position and velocity vectors
-    r = ss_vec(1:3,ii);    rnorm = norm(r);
-    v = ss_vec(4:end,ii);  vnorm = norm(v);
+    r = ss_vec(1:3,ii);     rnorm = norm(r);
+    v = ss_vec(4:end,ii);   vnorm = norm(v);
 
     %% Specific angular momentum
-    h = cross(r,v);     hnorm = norm(h);
+    h = cross(r,v);         hnorm = norm(h);
 
     %% Eccentricity
     e = norm(cross(v,h) - mu * r / rnorm) / mu;
-
+    
     %% Semi-major axis
     a = rnorm / ( 2 - rnorm * vnorm^2 / mu);
 
@@ -50,16 +50,17 @@ for ii = 1:N
     n = cross( K, h / hnorm );  % Nodal vector
     nnorm = norm(n);
 
-    % Vector with direction corresponding to apse line
-    apse = cross(v,h) / mu - r / rnorm;
-    apsenorm = norm(apse);
-
     RAAN = acos ( dot( n, I ) / nnorm );
     if dot(n,J) < 0
         RAAN = 2 * pi - RAAN;
     end
 
     %% Argument of perigee
+    
+    % Vector with direction corresponding to apse line
+    apse = cross(v,h) / mu - r / rnorm;
+    apsenorm = norm(apse);
+    
     omega = acos ( dot(n, apse)  / nnorm / apsenorm );
     if dot(apse,K) < 0
         omega = 2 * pi - omega;

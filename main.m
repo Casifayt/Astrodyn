@@ -74,8 +74,8 @@ oe_ISSd = [a_ISS, e_ISS, i_ISSd, omega_ISSd, RAAN_ISSd, theta_ISSd];
 oe_ISSr = [a_ISS, e_ISS, i_ISSr, omega_ISSr, RAAN_ISSr, theta_ISSr];
 
 
-%% Two-body propagator %%
 if exo == 1
+    %% Two-body propagator %%
     % SL3 orbital propagator
 
     [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd,...
@@ -99,38 +99,44 @@ if exo == 1
     f.Name = ('Ground tracks');
     f.WindowState = 'maximized';
     subplot(2,1,1);
-    grdtrk(ce_ODE, 'ODE integration');
+    grdtrk(ce_ODE, 'ODE integration', 0, dt);
     subplot(2,1,2);
-    grdtrk(ce_SL3, 'SL3 propagator');
+    grdtrk(ce_SL3, 'SL3 propagator', 0, dt);
 
-
+    final_elements_print(ce_ODE, ce_SL3, oe_ODE, oe_SL3);
+    
+    
 elseif exo == 2
 
 %% J2-term (Earth's oblateness) %%
 
     % SL3 orbital propagator
-    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd,...
-        'time',     tspan(end), ...
-        'dt',       dt,         ...
-        'fmodel',   [1 0 0 0 0] );      % J2 perturbation
+    [~, oe_SL3, ~, ce_SL3, geo_SL3] = orbprop(oe_ISSd,...
+        'time',     tspan(end),  ...
+        'dt',       dt,          ...
+        'fmodel',   [1 0 0 0 0]);    % J2 perturbation
 
-
+    
     % Numerical integration of Kepler relative motion
-    [~, oe_ODE, ce_ODE]  =  propagator02_ODE_DECHAMPS_FAYT(...
+    [~, oe_ODE, ce_ODE, geo_ODE]  =  propagator02_ODE_DECHAMPS_FAYT(...
         oe_ISSr, tspan, mu);
 
 
     % Plots comparisons
     keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
-
+    
     % Ground track
     f = figure;
-    f.Name = ('Ground tracks');
+    f.Name = ('Ground tracks of the orbit');
     f.WindowState = 'maximized';
     subplot(2,1,1);
-    grdtrk(ce_ODE, 'ODE integration');
+    grdtrk(ce_ODE(:,1:3), 'ODE integration', 1, dt);
     subplot(2,1,2);
-    grdtrk(ce_SL3, 'SL3 propagator');
+    grdtrk(ce_SL3(:,1:3), 'SL3 propagator', 1, dt);
+
+    
+    orb_trk_3d(ce_ODE(:,1:3));
+    final_elements_print(ce_ODE, ce_SL3, oe_ODE, oe_SL3);
 
     
 elseif exo == 3
@@ -170,48 +176,58 @@ end
 
 
 %% Other functions
-function cartesian_comparison(vec_ODE, vec_SL3, tspan, MATLABc)
-
-f = figure;
-f.Name = ('Comparison of state-space vectors');
-f.WindowState = 'maximized';
-
-subplot(3,2,1)
-plot( tspan/3600 ,  vec_ODE(:,1)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_SL3(:,1)/1000 , 'Color' , MATLABc{2}); 
-title('x'); ylabel('Position [km]'); xlabel('Time [hours]');
-
-subplot(3,2,3)
-plot( tspan/3600 ,  vec_ODE(:,2)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_SL3(:,2)/1000 , 'Color' , MATLABc{2}); 
-title('y'); ylabel('Position [km]'); xlabel('Time [hours]');
-
-subplot(3,2,5)
-plot( tspan/3600 ,  vec_ODE(:,3)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_SL3(:,3)/1000 , 'Color' , MATLABc{2}); 
-title('z'); ylabel('Position [km]'); xlabel('Time [hours]');
-
-subplot(3,2,2);
-plot( tspan/3600 ,  vec_ODE(:,4)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_SL3(:,4)/1000 , 'Color' , MATLABc{2}); 
-title('xdot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
-
-subplot(3,2,4);
-plot( tspan/3600 ,  vec_ODE(:,5)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_SL3(:,5)/1000 , 'Color' , MATLABc{2}); 
-title('ydot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
-
-subplot(3,2,6);
-plot( tspan/3600 ,  vec_ODE(:,6)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_SL3(:,6)/1000 , 'Color' , MATLABc{2});
-title('zdot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
-
-
-leg = legend('ode45 integrator', 'SL3 propagator');
-set(leg,'Position', [.455 .01 .125 .075],'Units', 'normalized');
-
+function final_elements_print(cart_ODE, cart_SL3, oe_ODE, oe_SL3)    
+    
+    % Cartesian print
+    x_SL3 = cart_SL3(end,1); xdot_SL3 = cart_SL3(end,4);
+    y_SL3 = cart_SL3(end,2); ydot_SL3 = cart_SL3(end,5);
+    z_SL3 = cart_SL3(end,3); zdot_SL3 = cart_SL3(end,6);
+    
+    x_ODE = cart_ODE(end,1); xdot_ODE = cart_ODE(end,4);
+    y_ODE = cart_ODE(end,2); ydot_ODE = cart_ODE(end,5);
+    z_ODE = cart_ODE(end,3); zdot_ODE = cart_ODE(end,6);
+    
+    fprintf(['\nFinal cartesian coordinates are\n' ...
+       '                  SL3           Own     Error\n' ...
+       'x [km] =         %.2f     %.2f    %.1e %%\n' ...
+       'y [km] =         %.2f      %.2f     %.1e %%\n' ...
+       'z [km] =         %.2f     %.2f      %.1e %%\n' ...
+       'xdot [km/s] =    %.2f         %.2f      %.1e %%\n' ...
+       'ydot [km/s] =    %.2f         %.2f      %.1e %%\n' ...
+       'zdot [km/s] =    %.2f           %.2f      %.1e %%\n'], ...
+        x_SL3/1000,    x_ODE/1000, 100 * abs( (x_SL3 - x_ODE)       / x_SL3), ...
+        y_SL3/1000,    y_ODE/1000, 100 * abs( (y_SL3 - y_ODE)       / y_SL3), ...
+        z_SL3/1000,    z_ODE/1000, 100 * abs( (z_SL3 - z_ODE)       / z_SL3), ...
+     xdot_SL3/1000, xdot_ODE/1000, 100 * abs( (xdot_SL3 - xdot_ODE) / xdot_SL3), ...
+     ydot_SL3/1000, ydot_ODE/1000, 100 * abs( (ydot_SL3 - ydot_ODE) / ydot_SL3), ...
+     zdot_SL3/1000, zdot_ODE/1000, 100 * abs( (zdot_SL3 - zdot_ODE) / zdot_SL3) ...
+     );
+    
+    % Keplerian print
+    a_SL3 = oe_SL3(end,1); omega_SL3 = oe_SL3(end,4);
+    e_SL3 = oe_SL3(end,2); raan_SL3 = oe_SL3(end,5);
+    i_SL3 = oe_SL3(end,3); theta_SL3 = oe_SL3(end,6);
+    
+    a_ODE = oe_ODE(end,1); omega_ODE = rad2deg(oe_ODE(end,4));
+    e_ODE = oe_ODE(end,2); raan_ODE = rad2deg(oe_ODE(end,5));
+    i_ODE = rad2deg(oe_ODE(end,3)); theta_ODE = rad2deg(oe_ODE(end,6));
+    
+    fprintf(['\nFinal Keplerian  coordinates are\n' ...
+       '                  SL3        Own     Error\n' ...
+       'a [km] =        %.2f    %.2f    %.1e %%\n' ...
+       'e [-] =         %.2e  %.2e    %.1e %%\n' ...
+       'i [deg] =       %.2f      %.2f      %.1e %%\n' ...
+       '\x03C9 [deg] =       %.2f      %.2f      %.1e %%\n' ...
+       '\x03A9 [deg] =       %.2f     %.2f     %.1e %%\n' ...
+       '\x03B8 [deg] =       %.2f     %.2f     %.1e %%\n'], ...
+     a_SL3/1000, a_ODE/1000, 100 * abs(a_SL3 - a_ODE)         / a_SL3, ...
+          e_SL3,      e_ODE, 100 * abs(e_SL3 - e_ODE)         / e_SL3, ...
+          i_SL3,      i_ODE, 100 * abs(i_SL3 - i_ODE)         / i_SL3, ...
+      omega_SL3,  omega_ODE, 100 * abs(omega_SL3 - omega_ODE) / omega_SL3, ...
+       raan_SL3,   raan_ODE, 100 * abs(raan_SL3 - raan_ODE)   / raan_SL3, ...
+      theta_SL3,  theta_ODE, 100 * abs(theta_SL3 - theta_ODE) / theta_SL3 ...
+     );
 end
-
 
 function keplerian_comparison(vec_ODE, vec_SL3, tspan, MATLABc)
 
@@ -249,6 +265,48 @@ subplot(3,2,6);
 plot( tspan/3600 ,  rad2deg(vec_ODE(:,6)) , 'Color' , MATLABc{1});  hold on;
 plot( tspan/3600 ,           vec_SL3(:,6) , 'Color' , MATLABc{2});
 title('True anomaly'); ylabel('\theta [deg]'); xlabel('Time [hours]');
+
+
+leg = legend('ode45 integrator', 'SL3 propagator');
+set(leg,'Position', [.455 .01 .125 .075],'Units', 'normalized');
+
+end
+
+function cartesian_comparison(vec_ODE, vec_SL3, tspan, MATLABc)
+
+f = figure;
+f.Name = ('Comparison of state-space vectors');
+f.WindowState = 'maximized';
+
+subplot(3,2,1)
+plot( tspan/3600 ,  vec_ODE(:,1)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,1)/1000 , 'Color' , MATLABc{2}); 
+title('x'); ylabel('Position [km]'); xlabel('Time [hours]');
+
+subplot(3,2,3)
+plot( tspan/3600 ,  vec_ODE(:,2)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,2)/1000 , 'Color' , MATLABc{2}); 
+title('y'); ylabel('Position [km]'); xlabel('Time [hours]');
+
+subplot(3,2,5)
+plot( tspan/3600 ,  vec_ODE(:,3)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,3)/1000 , 'Color' , MATLABc{2}); 
+title('z'); ylabel('Position [km]'); xlabel('Time [hours]');
+
+subplot(3,2,2);
+plot( tspan/3600 ,  vec_ODE(:,4)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,4)/1000 , 'Color' , MATLABc{2}); 
+title('xdot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
+
+subplot(3,2,4);
+plot( tspan/3600 ,  vec_ODE(:,5)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,5)/1000 , 'Color' , MATLABc{2}); 
+title('ydot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
+
+subplot(3,2,6);
+plot( tspan/3600 ,  vec_ODE(:,6)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SL3(:,6)/1000 , 'Color' , MATLABc{2});
+title('zdot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
 
 
 leg = legend('ode45 integrator', 'SL3 propagator');

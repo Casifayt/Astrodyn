@@ -1,30 +1,47 @@
-function grdtrk(xECEF, str)
+function grdtrk(xECEF, str, rot, dt)
+% This function displays the ground track of the spacecraft.
+% INPUTS
+%   - xECEF : Array of Cartesian coordinates [Nx3]  [m]
+%   - str   : Title of the plot                     [-]
+%   - rot   : Rotation of the Earth (0 or 1)        [-]
+%   - dt    : Time stpe of the simulation           [s] 
+%
+% Copyrights to the SL3 propagator for most of the script
 
-% 
-% This function display the ground track of the spacecraft.
-% In input it is required an Nx3 matrix defining N cartesian position in
-% the Earth Centered Earth Fixed frame.
-% 
-
+earth_ang_vel = 360 / 86400;    % Earth angular vel [deg/s]
 n = size(xECEF, 1);
 
-%% Computation of Latitude and longitude
+% Initialisation of geodetic coordinates arrays
 LON = zeros(n, 1);
 LAT = zeros(n, 1);
 H = zeros(n, 1);
 
-for j = 1 : n,
+% Use of given function to compute geodetic coordinates
+for j = 1 : n
     [H(j), LON(j), LAT(j)] = ecef2geodetic(xECEF(j, :)');
 end
 
+% Conversion to degrees and meters
 LAT = rad2deg(LAT);
 LON = rad2deg(LON);
 Hgdtrk = H * 1e-3;
 
+% Computation of the Earth's rotation (if asked)
+if rot == 1
+    for j = 1:length(LON)
+        if j > 0
+            LON(j) = LON(j) + j * dt * earth_ang_vel;
+        end
+        if LON(j) > 180
+            LON(j) = LON(j) - 360;
+        end
+    end
+end
+
 % Find discontinuites
 N = length(LAT);
-for j = 1 : 1 : (N - 1),
-    if abs(LON(j + 1) - LON(j)) > 300,
+for j = 1 : (N - 1)
+    if abs(LON(j + 1) - LON(j)) > 300
         LON = [LON(1 : j); NaN; LON((j + 1) : N)];
         LAT = [LAT(1 : j); NaN; LAT((j + 1) : N)];
         Hgdtrk = [Hgdtrk(1 : j); NaN; Hgdtrk((j + 1) : N)];
@@ -34,31 +51,35 @@ end
 
 %% Plot
 % Font size
-set(0, 'defaultaxesfontsize', 16);
-set(0, 'defaulttextfontsize', 16);
+set(0, 'defaultaxesfontsize', 16); set(0, 'defaulttextfontsize', 16);
 
+% Display of plot
+box on; axis on; view(0, 90);
 
-box on;
-axis on;
-view(0, 90);
-load coast;
-%axesm mercator;
-plot(long,lat);
-hold on;
-grid on;
-plot3(LON, LAT, Hgdtrk, 'r', 'linewidth', 0.2);
-inizio = plot3(LON(1), LAT(1), Hgdtrk(1), 's', ...
+% Coast plot
+load coast;     % Loading data
+plot(long,lat); % Plotting coasts
+hold on; grid on;
+
+% Groundtrack plot
+plot(LON, LAT, 'r', 'linewidth', 0.2);
+
+% Initial and final markers
+in = plot(LON(1), LAT(1), 's', ...
     'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 5);
-fine = plot3(LON(end), LAT(end), Hgdtrk(end), 'o', ...
+fin = plot(LON(end), LAT(end), 'o', ...
     'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 5);
-xlabel('Longitude [deg]');
-ylabel('Latitude [deg]');
-zlabel('Altitude [km]');
-xlim([-180 180]);
-ylim([-90 90]);
-legend([inizio, fine], 'Start', 'End');
+legend([in, fin], 'Start', 'End');
+
+% Plot title
 title(['Ground track - ' str]);
+% X axis
+xlabel('Longitude [deg]'); xlim([-180 180]);
+% Y axis
+ylabel('Latitude [deg]'); ylim([-90 90]);
+% Axis ticks
 set(gca, 'xtick', -180 : 60 : 180, 'ytick', -90 : 30 : 90);
+
 hold off;
 
 return
@@ -86,7 +107,7 @@ function [h, lambda, phi] = ecef2geodetic(rECEF)
 
 persistent a e2 ep2 f b
 
-if isempty(a),
+if isempty(a)
     % Ellipsoid constants
     a  = 6378.137e3; % Semimajor axis
     e2 = 0.081819190842^2; % Square of first eccentricity
