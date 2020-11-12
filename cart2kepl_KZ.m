@@ -11,10 +11,10 @@ function [oe_vec] = cart2kepl_KZ(ss_vec, mu)
 %   - oe_vec : Vector of Keplerian elements (1x6) ordered as follows :
 %       - oe_vec(1) : a     - semi-major axis       [m]
 %       - oe_vec(2) : e     - orbit eccentricity    [-]
-%       - oe_vec(3) : i     - inclination           [rad]
-%       - oe_vec(4) : omega - argument of perigee   [rad]
-%       - oe_vec(5) : Omega - RAAN                  [rad]
-%       - oe_vec(6) : theta - true anomaly          [rad]
+%       - oe_vec(3) : i     - inclination           [deg]
+%       - oe_vec(4) : omega - argument of perigee   [deg]
+%       - oe_vec(5) : Omega - RAAN                  [deg]
+%       - oe_vec(6) : theta - true anomaly          [deg]
 %
 % REFERENCES
 % Chapter 3A - The orbit in space of Pr. G. Kerschen
@@ -50,9 +50,9 @@ for ii = 1:N
     n = cross( K, h / hnorm );  % Nodal vector
     nnorm = norm(n);
 
-    RAAN = acos ( dot( n, I ) / nnorm );
+    W = acos ( dot( n, I ) / nnorm );
     if dot(n,J) < 0
-        RAAN = 2 * pi - RAAN;
+        W = 2 * pi - W;
     end
 
     %% Argument of perigee
@@ -61,9 +61,9 @@ for ii = 1:N
     apse = cross(v,h) / mu - r / rnorm;
     apsenorm = norm(apse);
     
-    omega = acos ( dot(n, apse)  / nnorm / apsenorm );
+    w = acos ( dot(n, apse)  / nnorm / apsenorm );
     if dot(apse,K) < 0
-        omega = 2 * pi - omega;
+        w = 2 * pi - w;
     end
 
     %% True anomaly
@@ -75,10 +75,10 @@ for ii = 1:N
     oe_vec(:,ii) = [
         a;
         e;
-        i;
-        omega;
-        RAAN;
-        theta];
-    
+        rad2deg(i);
+        rad2deg(w);
+        rad2deg(W);
+        rad2deg(theta);
+        ];
 end
 end

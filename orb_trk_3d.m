@@ -18,7 +18,7 @@ x_vec = cart_vec(:,1);
 y_vec = cart_vec(:,2);
 z_vec = cart_vec(:,3);
 
-plot3(x_vec, y_vec, z_vec);
+plot3(x_vec, y_vec, z_vec, 'LineWidth', 1.5);
 
 plot3(x_vec(1), y_vec(1), z_vec(1), 's', ...
     'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 5);

@@ -1,4 +1,4 @@
-function [tspan, oe_vec, ss_vec, geo_vec] = propagator02_ODE_DECHAMPS_FAYT (oe0, tspan, mu)
+function [tspan, oe_vec, ss_vec, geo_vec] = propagator02_ODE_DECHAMPS_FAYT (oe0, tspan, mu, reltol)
 % This function provides an orbital propagation assuming Keplerian motion
 % under the two-body assumption with J2 perturbation.
 % The EoM are integrated using the ODE45 solver.
@@ -12,7 +12,8 @@ function [tspan, oe_vec, ss_vec, geo_vec] = propagator02_ODE_DECHAMPS_FAYT (oe0,
 %       - oe0(5) = Omega - RAAN                     [rad]
 %       - oe0(6) = theta - true anomaly             [rad]
 %   - tspan     : Vector of time properties         [s]
-%   - mu        : Gravitational body parameter      [km^3/s^2]
+%   - mu        : Gravitational body parameter      [m^3/s^2]
+%   - reltol    : Relative tolerance of the solver  [-]
 % 
 % OUTPUTS
 %   - tspan     : Vector of time properties         [s]
@@ -28,7 +29,7 @@ function [tspan, oe_vec, ss_vec, geo_vec] = propagator02_ODE_DECHAMPS_FAYT (oe0,
 ss0 = kepl2cart_KZ(oe0, mu);
 
 % Setting of the solver option
-options = odeset('RelTol',1e-8,'AbsTol',1e-8);
+options = odeset('RelTol',reltol,'AbsTol',1e-8);
 
 % Numerical integration through ODE45 solver
 [~, ss_vec] = ode45( @(t,ss_vec) keplereq3D(t, ss_vec, mu), ...
@@ -124,17 +125,17 @@ st = sin(the); ct = cos(the);
 
 
 % Acceleration in radial direction
-% accel_rad = mu  / 2 / r^4 * (   ...
-%       9 * J * R^2 * sp^2       ...
-%     - 3 * J * R^2              ...
-%     - 2 * r^2               );
+accel_rad = mu  / 2 / r^4 * (   ...
+      9 * J * R^2 * cp^2       ...
+    - 3 * J * R^2              ...
+    - 2 * r^2               );
 
-accel_rad = - 3/2 * J * mu / r^2 * (R/r)^2 * (3 * cp^2 - 1);
+% accel_rad = - 3/2 * J * mu / r^2 * (R/r)^2 * (3 * cp^2 - 1);
 
 
 % Acceleration in azimuthal direction
-% accel_azi =  3 * mu * J * R^2 * sp * cp / r^4;
-accel_azi = -3/2 * J * mu / r^2 * (R/r)^2 * sp * cp;
+accel_azi =  3 * mu * J * R^2 * sp * cp / r^4;
+% accel_azi = -3/2 * J * mu / r^2 * (R/r)^2 * sp * cp;
 
 % Acceleration field in spherical coordinates
 A_sph = [ 
@@ -148,18 +149,18 @@ A_sph = [
 M_sph2cart = [ 
     sp * ct    cp * ct    -st;
     sp * st    cp * st     ct;
-         cp        -sp      0;
+         cp        -sp      1;
          ];
      
 
 % Acceleration field in cartesian coordinates
 A = M_sph2cart * A_sph;
-
-A = - mu / r^3 * [vec(1); vec(2); vec(3)]  ...
-+ 3/2 * J * mu * R^2 / r^4 * [...
-    vec(1)/r * (5 * vec(3)^2 / r^2 - 1) ;
-    vec(2)/r * (5 * vec(3)^2 / r^2 - 1) ;
-    vec(3)/r * (5 * vec(3)^2 / r^2 - 3) ;];
+% 
+% A = - mu / r^3 * [vec(1); vec(2); vec(3)]  ...
+% + 3/2 * J * mu * R^2 / r^4 * [...
+%     vec(1)/r * (5 * vec(3)^2 / r^2 - 1) ;
+%     vec(2)/r * (5 * vec(3)^2 / r^2 - 1) ;
+%     vec(3)/r * (5 * vec(3)^2 / r^2 - 3) ;];
 
 end
 

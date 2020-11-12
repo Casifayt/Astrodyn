@@ -1,4 +1,4 @@
-function [tspan, oe_vec, ss_vec] = propagator01_ODE_DECHAMPS_FAYT (oe0, tspan, mu)
+function [tspan, oe_vec, ss_vec] = propagator01_ODE_DECHAMPS_FAYT (oe0, tspan, mu, reltol)
 % This function provides an orbital propagation assuming Keplerian motion
 % under the two-body assumption.
 % The EoM are integrated using the ODE45 solver.
@@ -11,8 +11,9 @@ function [tspan, oe_vec, ss_vec] = propagator01_ODE_DECHAMPS_FAYT (oe0, tspan, m
 %       - oe0(4) = omega - argument of perigee      [rad]
 %       - oe0(5) = Omega - RAAN                     [rad]
 %       - oe0(6) = theta - true anomaly             [rad]
-%   - tspan     : Incremental time step vector      [s]
+%   - tspan     : Vector of time properties         [s]
 %   - mu        : Gravitational body parameter      [m^3/s^2]
+%   - reltol    : Relative tolerance of the solver  [-]
 % 
 % OUTPUTS
 %   - tspan     : Vector of time properties         [s]
@@ -26,8 +27,8 @@ function [tspan, oe_vec, ss_vec] = propagator01_ODE_DECHAMPS_FAYT (oe0, tspan, m
 % For computational purposes, Cartesian coordinates are used.
 ss0 = kepl2cart_KZ(oe0, mu);
 
-% Setting of the solver options
-options = odeset('RelTol',1e-8,'AbsTol',1e-8);
+% Setting the solver options
+options = odeset('RelTol',reltol,'AbsTol',1e-13);
 
 % Numerical integration through ODE45 solver
 [~, ss_vec] = ode45( @(t,ss_vec) keplereq3D(t, ss_vec, mu), ...

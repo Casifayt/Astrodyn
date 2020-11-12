@@ -73,6 +73,7 @@ oe_ISSd = [a_ISS, e_ISS, i_ISSd, omega_ISSd, RAAN_ISSd, theta_ISSd];
 % Radians
 oe_ISSr = [a_ISS, e_ISS, i_ISSr, omega_ISSr, RAAN_ISSr, theta_ISSr];
 
+reltol = 1e-11;
 
 if exo == 1
     %% Two-body propagator %%
@@ -83,26 +84,30 @@ if exo == 1
         'dt',       dt,             ...     
         'fmodel',   [0 0 0 0 0]     );      % No perturbation
 
-    % Iterations following Kepler equation
-    % Not working RIP
-    % [~, oe_KEPL, ce_KEPL] = propagator01_KEPL_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
-
     % Numerical integration of Kepler relative motion
-    [~, oe_ODE, ce_ODE]  =  propagator01_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu);
+    [~, oe_ODE, ce_ODE]  =  propagator01_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu, reltol);
 
+    % Analytical Kepler equation
+    oe_ISS_KEPL = oe_ISSr;
+    oe_ISS_KEPL(end) = M_ISSr;
+    [~, oe_KEPL, ce_KEPL] = KEPLER_analytical(oe_ISS_KEPL, tspan, mu);
+    
     % Plots comparisons
-%     cartesian_comparison(ce_ODE, ce_SL3, tspan, MATLABc);
-    keplerian_comparison(oe_ODE, oe_SL3, tspan, MATLABc);
+    vectors_cell = { oe_ODE; 'ODE45 integrator';
+        oe_SL3; 'S3L propagator';
+        oe_KEPL; 'Kepler equations'};
+    keplerian_comparison(vectors_cell, tspan, MATLABc);
 
-    % Ground track
+    % Ground tracks
     f = figure;
     f.Name = ('Ground tracks');
     f.WindowState = 'maximized';
     subplot(2,1,1);
-    grdtrk(ce_ODE, 'ODE integration', 0, dt);
+    grdtrk(ce_ODE, 'ODE integration', 1, dt);
     subplot(2,1,2);
-    grdtrk(ce_SL3, 'SL3 propagator', 0, dt);
+    grdtrk(ce_KEPL, 'KEPL propagator', 1, dt);
 
+    orb_trk_3d(ce_ODE(:,1:3));
     final_elements_print(ce_ODE, ce_SL3, oe_ODE, oe_SL3);
     
     
@@ -119,7 +124,7 @@ elseif exo == 2
     
     % Numerical integration of Kepler relative motion
     [~, oe_ODE, ce_ODE, geo_ODE]  =  propagator02_ODE_DECHAMPS_FAYT(...
-        oe_ISSr, tspan, mu);
+        oe_ISSr, tspan, mu, reltol);
 
 
     % Plots comparisons
@@ -130,9 +135,9 @@ elseif exo == 2
     f.Name = ('Ground tracks of the orbit');
     f.WindowState = 'maximized';
     subplot(2,1,1);
-    grdtrk(ce_ODE(:,1:3), 'ODE integration', 1, dt);
+    grdtrk(ce_ODE(:,1:3), 'Fixed Earth', 0, dt);
     subplot(2,1,2);
-    grdtrk(ce_SL3(:,1:3), 'SL3 propagator', 1, dt);
+    grdtrk(ce_ODE(:,1:3), 'Rotating Earth', 1, dt);
 
     
     orb_trk_3d(ce_ODE(:,1:3));
@@ -153,7 +158,7 @@ elseif exo == 3
 
 
     % Numerical integration of Kepler relative motion
-    [~, oe_ODE, ce_ODE]  =  propagator03_ODE_DECHAMPS_FAYT(...
+    [~, oe_ODE, ce_ODE, geo_ODE]  =  propagator03_ODE_DECHAMPS_FAYT(...
         oe_ISSr, tspan, mu, ISS_prop);
 
     % Plots comparisons
@@ -164,10 +169,13 @@ elseif exo == 3
     f.Name = ('Ground tracks');
     f.WindowState = 'maximized';
     subplot(2,1,1);
-    grdtrk(ce_ODE, 'ODE integration');
+    grdtrk(ce_ODE, 'ODE integration', 1, dt);
     subplot(2,1,2);
-    grdtrk(ce_SL3, 'SL3 propagator');
+    grdtrk(ce_SL3, 'SL3 propagator', 1, dt);
 
+    orb_trk_3d(ce_ODE(:,1:3));
+    final_elements_print(ce_ODE, ce_SL3, oe_ODE, oe_SL3);
+    
 elseif exo == 4
 %% Comparison with actual satellite data %%
 
@@ -187,87 +195,141 @@ function final_elements_print(cart_ODE, cart_SL3, oe_ODE, oe_SL3)
     y_ODE = cart_ODE(end,2); ydot_ODE = cart_ODE(end,5);
     z_ODE = cart_ODE(end,3); zdot_ODE = cart_ODE(end,6);
     
-    fprintf(['\nFinal cartesian coordinates are\n' ...
-       '                  SL3           Own     Error\n' ...
-       'x [km] =         %.2f     %.2f    %.1e %%\n' ...
-       'y [km] =         %.2f      %.2f     %.1e %%\n' ...
-       'z [km] =         %.2f     %.2f      %.1e %%\n' ...
-       'xdot [km/s] =    %.2f         %.2f      %.1e %%\n' ...
-       'ydot [km/s] =    %.2f         %.2f      %.1e %%\n' ...
+    erel_x = abs( (x_SL3 - x_ODE) / x_SL3);
+    erel_y = abs( (y_SL3 - y_ODE) / y_SL3);
+    erel_z = abs( (z_SL3 - z_ODE) / z_SL3);
+    
+    erel_xdot = abs( (xdot_SL3 - xdot_ODE) / xdot_SL3);
+    erel_ydot = abs( (ydot_SL3 - ydot_ODE) / ydot_SL3);
+    erel_zdot = abs( (zdot_SL3 - zdot_ODE) / zdot_SL3);
+    
+    fprintf(['\nFinal cartesian coordinates are\n'             ...
+       '                  SL3           Own     Error\n'       ...
+       'x [km] =         %.2f     %.2f    %.1e %%\n'           ...
+       'y [km] =         %.2f      %.2f     %.1e %%\n'         ...
+       'z [km] =         %.2f     %.2f      %.1e %%\n'         ...
+       'xdot [km/s] =    %.2f         %.2f      %.1e %%\n'     ...
+       'ydot [km/s] =    %.2f         %.2f      %.1e %%\n'     ...
        'zdot [km/s] =    %.2f           %.2f      %.1e %%\n'], ...
-        x_SL3/1000,    x_ODE/1000, 100 * abs( (x_SL3 - x_ODE)       / x_SL3), ...
-        y_SL3/1000,    y_ODE/1000, 100 * abs( (y_SL3 - y_ODE)       / y_SL3), ...
-        z_SL3/1000,    z_ODE/1000, 100 * abs( (z_SL3 - z_ODE)       / z_SL3), ...
-     xdot_SL3/1000, xdot_ODE/1000, 100 * abs( (xdot_SL3 - xdot_ODE) / xdot_SL3), ...
-     ydot_SL3/1000, ydot_ODE/1000, 100 * abs( (ydot_SL3 - ydot_ODE) / ydot_SL3), ...
-     zdot_SL3/1000, zdot_ODE/1000, 100 * abs( (zdot_SL3 - zdot_ODE) / zdot_SL3) ...
+        x_SL3/1000,    x_ODE/1000, 100 *    erel_x,            ...
+        y_SL3/1000,    y_ODE/1000, 100 *    erel_y,            ...
+        z_SL3/1000,    z_ODE/1000, 100 *    erel_z,            ...
+     xdot_SL3/1000, xdot_ODE/1000, 100 * erel_xdot,            ...
+     ydot_SL3/1000, ydot_ODE/1000, 100 * erel_ydot,            ...
+     zdot_SL3/1000, zdot_ODE/1000, 100 * erel_zdot             ...
      );
     
+     fprintf(['Least squared error on cartesian vectors : \n' ...
+         'On position : %.2e %%\n'                            ...
+         'On velocity : %.2e %%\n']                         , ...
+         sqrt(erel_x^2 + erel_y^2 + erel_z^2)              , ...
+         sqrt(erel_xdot^2 + erel_ydot^2 + erel_zdot^2)       ...
+     );
+ 
     % Keplerian print
-    a_SL3 = oe_SL3(end,1); omega_SL3 = oe_SL3(end,4);
-    e_SL3 = oe_SL3(end,2); raan_SL3 = oe_SL3(end,5);
-    i_SL3 = oe_SL3(end,3); theta_SL3 = oe_SL3(end,6);
+    a_SL3 = oe_SL3(end,1); w_SL3 = oe_SL3(end,4);
+    e_SL3 = oe_SL3(end,2); W_SL3 = oe_SL3(end,5);
+    i_SL3 = oe_SL3(end,3); t_SL3 = oe_SL3(end,6);
     
-    a_ODE = oe_ODE(end,1); omega_ODE = rad2deg(oe_ODE(end,4));
-    e_ODE = oe_ODE(end,2); raan_ODE = rad2deg(oe_ODE(end,5));
-    i_ODE = rad2deg(oe_ODE(end,3)); theta_ODE = rad2deg(oe_ODE(end,6));
+    a_ODE = oe_ODE(end,1); w_ODE = oe_ODE(end,4);
+    e_ODE = oe_ODE(end,2); W_ODE = oe_ODE(end,5);
+    i_ODE = oe_ODE(end,3); t_ODE = oe_ODE(end,6);
     
-    fprintf(['\nFinal Keplerian  coordinates are\n' ...
-       '                  SL3        Own     Error\n' ...
-       'a [km] =        %.2f    %.2f    %.1e %%\n' ...
-       'e [-] =         %.2e  %.2e    %.1e %%\n' ...
-       'i [deg] =       %.2f      %.2f      %.1e %%\n' ...
+    erel_a = abs(a_SL3 - a_ODE) / a_SL3;
+    erel_e = abs(e_SL3 - e_ODE) / e_SL3;
+    erel_i = abs(i_SL3 - i_ODE) / i_SL3;
+    erel_w = abs(w_SL3 - w_ODE) / w_SL3;
+    erel_W = abs(W_SL3 - W_ODE) / W_SL3;
+    erel_t = abs(t_SL3 - t_ODE) / t_SL3;
+    
+    fprintf(['\nFinal Keplerian  coordinates are\n'         ...
+       '                  SL3        Own     Error\n'       ...
+       'a [km] =        %.2f    %.2f    %.1e %%\n'          ...
+       'e [-] =         %.2e  %.2e    %.1e %%\n'            ...
+       'i [deg] =       %.2f      %.2f      %.1e %%\n'      ...
        '\x03C9 [deg] =       %.2f      %.2f      %.1e %%\n' ...
-       '\x03A9 [deg] =       %.2f     %.2f     %.1e %%\n' ...
+       '\x03A9 [deg] =       %.2f     %.2f     %.1e %%\n'   ...
        '\x03B8 [deg] =       %.2f     %.2f     %.1e %%\n'], ...
-     a_SL3/1000, a_ODE/1000, 100 * abs(a_SL3 - a_ODE)         / a_SL3, ...
-          e_SL3,      e_ODE, 100 * abs(e_SL3 - e_ODE)         / e_SL3, ...
-          i_SL3,      i_ODE, 100 * abs(i_SL3 - i_ODE)         / i_SL3, ...
-      omega_SL3,  omega_ODE, 100 * abs(omega_SL3 - omega_ODE) / omega_SL3, ...
-       raan_SL3,   raan_ODE, 100 * abs(raan_SL3 - raan_ODE)   / raan_SL3, ...
-      theta_SL3,  theta_ODE, 100 * abs(theta_SL3 - theta_ODE) / theta_SL3 ...
+     a_SL3/1000, a_ODE/1000, 100 * erel_a,                  ...
+          e_SL3,      e_ODE, 100 * erel_e,                  ...
+          i_SL3,      i_ODE, 100 * erel_i,                  ...
+          w_SL3,      w_ODE, 100 * erel_w,                  ...
+          W_SL3,      W_ODE, 100 * erel_W,                  ...
+          t_SL3,      t_ODE, 100 * erel_t                   ...
      );
 end
 
-function keplerian_comparison(vec_ODE, vec_SL3, tspan, MATLABc)
+function keplerian_comparison(vec_cell, tspan, MATLABc)
+
+vec_1 = vec_cell{1};
+title1 = vec_cell{2};
+
+vec_2 = vec_cell{3};
+title2 = vec_cell{4};
+
+if numel(vec_cell) > 4
+    vec_3 = vec_cell{5};
+    title3 = vec_cell{6};
+end
 
 f = figure;
 f.Name = ('Comparison of orbital elements');
 f.WindowState = 'maximized';
 
 subplot(3,2,1);
-plot( tspan/3600 ,  vec_ODE(:,1)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_SL3(:,1)/1000 , 'Color' , MATLABc{2}); 
+plot( tspan/3600 ,  vec_1(:,1)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_2(:,1)/1000 , 'Color' , MATLABc{2}); 
+if numel(vec_cell) > 4
+   plot( tspan/3600 ,  vec_3(:,1)/1000 , 'Color' , MATLABc{3}); 
+end
 title('Semi-major axis'); ylabel('a [km]'); xlabel('Time [hours]');
 
 subplot(3,2,3);
-plot( tspan/3600 ,  vec_ODE(:,2) , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_SL3(:,2) , 'Color' , MATLABc{2}); 
+plot( tspan/3600 ,  vec_1(:,2) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_2(:,2) , 'Color' , MATLABc{2}); 
+if numel(vec_cell) > 4
+   plot( tspan/3600 ,  vec_3(:,2) , 'Color' , MATLABc{3}); 
+end
 title('Eccentricity'); ylabel('e [-]'); xlabel('Time [hours]');
 
 subplot(3,2,5);
-plot( tspan/3600 ,  rad2deg(vec_ODE(:,3)) , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,           vec_SL3(:,3) , 'Color' , MATLABc{2}); 
+plot( tspan/3600 ,  vec_1(:,3) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_2(:,3) , 'Color' , MATLABc{2}); 
+if numel(vec_cell) > 4
+   plot( tspan/3600 , vec_3(:,3) , 'Color' , MATLABc{3}); 
+end
 title('Inclination'); ylabel('i [deg]'); xlabel('Time [hours]');
 
 subplot(3,2,2);
-plot( tspan/3600 ,  rad2deg(vec_ODE(:,4)) , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,           vec_SL3(:,4) , 'Color' , MATLABc{2}); 
+plot( tspan/3600 ,  vec_1(:,4) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_2(:,4) , 'Color' , MATLABc{2}); 
+if numel(vec_cell) > 4
+   plot( tspan/3600 , vec_3(:,4) , 'Color' , MATLABc{3}); 
+end
 title('Argument of perigee'); 
 ylabel('\omega [deg]'); xlabel('Time [hours]');
 
 subplot(3,2,4);
-plot( tspan/3600 ,  rad2deg(vec_ODE(:,5)) , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,           vec_SL3(:,5) , 'Color' , MATLABc{2}); 
+plot( tspan/3600 ,  vec_1(:,5), 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_2(:,5) , 'Color' , MATLABc{2}); 
+if numel(vec_cell) > 4
+   plot( tspan/3600 , vec_3(:,5) , 'Color' , MATLABc{3}); 
+end
 title('RAAN'); ylabel('\Omega [deg]'); xlabel('Time [hours]');
 
 subplot(3,2,6);
-plot( tspan/3600 ,  rad2deg(vec_ODE(:,6)) , 'Color' , MATLABc{1});  hold on;
-plot( tspan/3600 ,           vec_SL3(:,6) , 'Color' , MATLABc{2});
+plot( tspan/3600 ,  vec_1(:,6) , 'Color' , MATLABc{1});  hold on;
+plot( tspan/3600 ,  vec_2(:,6) , 'Color' , MATLABc{2});
+if numel(vec_cell) > 4
+   plot( tspan/3600 , vec_3(:,6) , 'Color' , MATLABc{3});
+end
 title('True anomaly'); ylabel('\theta [deg]'); xlabel('Time [hours]');
 
-
-leg = legend('ode45 integrator', 'SL3 propagator');
+if numel(vec_cell) > 4
+    leg = legend(title1, title2, title3);
+else
+    leg = legend(title1, title2);
+end
 set(leg,'Position', [.455 .01 .125 .075],'Units', 'normalized');
 
 end

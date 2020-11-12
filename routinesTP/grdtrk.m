@@ -1,15 +1,15 @@
-function grdtrk(xECEF, str, rot, dt)
+function grdtrk(rECEF, str, rot, dt)
 % This function displays the ground track of the spacecraft.
 % INPUTS
-%   - xECEF : Array of Cartesian coordinates [Nx3]  [m]
+%   - rECEF : Array of Cartesian coordinates [Nx3]  [m]
 %   - str   : Title of the plot                     [-]
 %   - rot   : Rotation of the Earth (0 or 1)        [-]
-%   - dt    : Time stpe of the simulation           [s] 
+%   - dt    : Time step of the simulation           [s] 
 %
 % Copyrights to the SL3 propagator for most of the script
 
 earth_ang_vel = 360 / 86400;    % Earth angular vel [deg/s]
-n = size(xECEF, 1);
+n = size(rECEF, 1);
 
 % Initialisation of geodetic coordinates arrays
 LON = zeros(n, 1);
@@ -18,7 +18,7 @@ H = zeros(n, 1);
 
 % Use of given function to compute geodetic coordinates
 for j = 1 : n
-    [H(j), LON(j), LAT(j)] = ecef2geodetic(xECEF(j, :)');
+    [H(j), LON(j), LAT(j)] = ecef2geodetic(rECEF(j, :)');
 end
 
 % Conversion to degrees and meters
@@ -54,11 +54,13 @@ end
 set(0, 'defaultaxesfontsize', 16); set(0, 'defaulttextfontsize', 16);
 
 % Display of plot
-box on; axis on; view(0, 90);
+box on; axis on;
 
-% Coast plot
-load coast;     % Loading data
-plot(long,lat); % Plotting coasts
+% Earth's surface
+image_file = 'http://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Land_ocean_ice_2048.jpg/1024px-Land_ocean_ice_2048.jpg';
+data = imread(image_file);
+
+image('CData', data, 'XData', [-180 180], 'YData', [90 -90]);
 hold on; grid on;
 
 % Groundtrack plot
