@@ -69,7 +69,7 @@ oe_ISSr = [a_ISS, e_ISS, i_ISSr, omega_ISSr, RAAN_ISSr, theta_ISSr];
 
 m_ISS = 410500;                     % Mass of the ISS [kg]
 Cd = 2;                             % Drag coefficient [-]
-A = 1641;                       % Cross-section of the ISS [m^2]
+A = 1641;                           % Cross-section of the ISS [m^2]
 
 ISS_prop = [m_ISS, Cd, A];
 
@@ -137,7 +137,11 @@ elseif exo == 3
 
     % Numerical integration of Kepler relative motion
     [~, oe_ODE, ce_ODE]  =  propagator03_ODE_DECHAMPS_FAYT(oe_ISSr, tspan, mu, ISS_prop);
-
+    
+    % Analytical computation (S3L drag only, Propagator03 drag only, analytical)
+    [~, oe_SL3d, ~, ce_SL3d] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt, 'fmodel', [0 1 0 0 0]); 
+    [~, oe_ODEd, ce_ODEd]  =  propagator03_ODE_DECHAMPS_FAYT_drag_only(oe_ISSr, tspan, mu, ISS_prop); 
+    [a_reduction_anal,a_reduction_num,a_reduction_SL3] = atmospheric_drag_analytical(oe_ODEd(:,1),oe_SL3d(:,1)); 
 
     % Plots comparisons
     cartesian_comparison(ce_ODE, ce_SL3, tspan, MATLABc);
@@ -260,6 +264,8 @@ title('zdot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
 leg = legend('ode45 integrator', 'SL3 propagator');
 set(leg,'Position', [.455 .01 .125 .075],'Units', 'normalized');
 
+set(gcf, 'position', [300, 200, 700, 500])
+
 end
 
 
@@ -303,6 +309,8 @@ title('True anomaly'); ylabel('\theta [deg]'); xlabel('Time [hours]');
 
 leg = legend('ode45 integrator', 'SL3 propagator');
 set(leg,'Position', [.455 .01 .125 .075],'Units', 'normalized');
+
+set(gcf, 'position', [300, 200, 700, 500])
 
 end
 

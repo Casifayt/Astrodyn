@@ -136,5 +136,8 @@ cdata = imread(image_file);
 
 set(globe, 'FaceColor', 'texturemap', 'CData', cdata, 'FaceAlpha', alpha, 'EdgeColor', 'none');
 
+%% Others
+
+set(gcf, 'position', [300, 200, 700, 500])
 
 end

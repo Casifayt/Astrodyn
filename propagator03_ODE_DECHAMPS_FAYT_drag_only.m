@@ -1,6 +1,6 @@
-function [tspan, oe_vec, ss_vec] = propagator03_ODE_DECHAMPS_FAYT (oe0, tspan, mu, ISS_prop)
+function [tspan, oe_vec, ss_vec] = propagator03_ODE_DECHAMPS_FAYT_drag_only (oe0, tspan, mu, ISS_prop)
 % This function provides an orbital propagation assuming Keplerian motion
-% under the two-body assumption with J2 and atmospheric drag perturbation.
+% under the two-body assumption with the atmospheric drag perturbation.
 % The EoM are integrated using the ODE45 solver.
 % 
 % INPUTS
@@ -160,11 +160,11 @@ M_sph2cart = [
 % Acceleration field in cartesian coordinates
 A = M_sph2cart * A_sph;
 
-A = - mu / r^3 * [ss_vec(1); ss_vec(2); ss_vec(3)]  ...
-+ 3/2 * J * mu * R^2 / r^4 * [...
-    ss_vec(1)/r * (5 * ss_vec(3)^2 / r^2 - 1) ;
-    ss_vec(2)/r * (5 * ss_vec(3)^2 / r^2 - 1) ;
-    ss_vec(3)/r * (5 * ss_vec(3)^2 / r^2 - 3) ;];
+A = - mu / r^3 * [ss_vec(1); ss_vec(2); ss_vec(3)];  
+% + 3/2 * J * mu * R^2 / r^4 * [...
+%     ss_vec(1)/r * (5 * ss_vec(3)^2 / r^2 - 1) ;
+%     ss_vec(2)/r * (5 * ss_vec(3)^2 / r^2 - 1) ;
+%     ss_vec(3)/r * (5 * ss_vec(3)^2 / r^2 - 3) ;];
 
 
 
@@ -382,5 +382,3 @@ N = a / sqrt(1 - e2 * sin_phi^2);
 h = RHO * cos(phi) + (z + e2 * N * sin_phi) * sin_phi - N; % [m]
 
 end
-
-
