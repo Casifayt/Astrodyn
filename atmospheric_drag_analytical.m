@@ -41,17 +41,17 @@ a_reduction_anal = diff;      % Difference between the initial and final semi-ma
 
 %% Computation of the Reduction in the Semi-Major Axis (Propagator03)
 
-[~,pos] = min(a_drag);
+[~,pos1] = min(a_drag);
 
-diff = a_drag(pos,1) - a_i;       % Difference between the initial and final semi-major axes [m]
+diff = a_drag(pos1,1) - a_i;       % Difference between the initial and final semi-major axes [m]
 
 a_reduction_num = diff;           % Difference between the initial and final semi-major axes [m] (OUTPUT)
 
 %% Computation of the Reduction in the Semi-Major Axis (S3L Propagator)
 
-[~,pos] = min(a_SL3);
+[~,pos2] = min(a_SL3);
 
-diff = a_SL3(pos,1) - a_i;        % Difference between the initial and final semi-major axes [m]
+diff = a_SL3(pos2,1) - a_i;        % Difference between the initial and final semi-major axes [m]
 
 a_reduction_SL3 = diff;           % Difference between the initial and final semi-major axes [m] (OUTPUT)
 
@@ -59,9 +59,9 @@ a_reduction_SL3 = diff;           % Difference between the initial and final sem
 
 plot([t_i,t_f/3600],[a_i,a_f],'color',[252 186 3]/255,'LineWidth',1.5)
 hold on
-plot([t_i,t_f/3600],[a_i,a_drag(pos,1)],'color',[15 43 184]/255,'LineWidth',1.5)
+plot([t_i,t_f/3600],[a_i,a_drag(pos1,1)],'color',[15 43 184]/255,'LineWidth',1.5)
 hold on
-plot([t_i,t_f/3600],[a_i,a_SL3(pos,1)],'color',[201 4 4]/255,'LineWidth',1.5)
+plot([t_i,t_f/3600],[a_i,a_SL3(pos2,1)],'color',[201 4 4]/255,'LineWidth',1.5)
 h=legend('Analytical Result','Propagator03 (drag only)','S3L Propagator (drag only)');
 set(h,'interpreter','Latex','FontSize',12,'Location','south west');
 grid minor
