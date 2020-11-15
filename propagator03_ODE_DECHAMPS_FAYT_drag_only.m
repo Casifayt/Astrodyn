@@ -191,7 +191,7 @@ rho_atm = harris_priester(ss_vec(1:3));
 f_atm_norm = 0.5 * Cd_ISS * S_ref_ISS * rho_atm * vtas.^2 / m_ISS;
 f_atm = - f_atm_norm * vel_vec_unitary;
 
-A = A + f_atm;
+A = A + f_atm*1.75e2;
 
 end
 
