@@ -94,9 +94,9 @@ if exo == 1
     f.Name = ('Ground tracks');
     f.WindowState = 'maximized';
     subplot(2,1,1);
-    grdtrk(ce_ODE, 'ODE integration');
+    grdtrk(ce_ODE, 'ODE integration',0,dt);
     subplot(2,1,2);
-    grdtrk(ce_SL3, 'SL3 propagator');
+    grdtrk(ce_SL3, 'SL3 propagator',0,dt);
 
     orb_trk_3d(ce_ODE(:,1:3));
     final_elements_print(ce_ODE, ce_SL3, oe_ODE, oe_SL3);
@@ -121,9 +121,9 @@ elseif exo == 2
     f.Name = ('Ground tracks');
     f.WindowState = 'maximized';
     subplot(2,1,1);
-    grdtrk(ce_ODE, 'ODE integration');
+    grdtrk(ce_ODE, 'ODE integration',0,dt);
     subplot(2,1,2);
-    grdtrk(ce_SL3, 'SL3 propagator');
+    grdtrk(ce_SL3, 'SL3 propagator',0,dt);
     
     orb_trk_3d(ce_ODE(:,1:3));
     final_elements_print(ce_ODE, ce_SL3, oe_ODE, oe_SL3);
@@ -152,9 +152,11 @@ elseif exo == 3
     f.Name = ('Ground tracks');
     f.WindowState = 'maximized';
     subplot(2,1,1);
-    grdtrk(ce_ODE, 'ODE integration');
+    grdtrk(ce_ODE, 'ODE integration',0,dt);
+%     grdtrk(ce_ODE, 'Fixed Earth',0,dt);
     subplot(2,1,2);
-    grdtrk(ce_SL3, 'SL3 propagator');
+%     grdtrk(ce_ODE, 'Rotating Earth',1,dt);
+    grdtrk(ce_SL3, 'SL3 propagator',0,dt);
     
     orb_trk_3d(ce_ODE(:,1:3));
     final_elements_print(ce_ODE, ce_SL3, oe_ODE, oe_SL3);
