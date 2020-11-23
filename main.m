@@ -17,7 +17,7 @@ exo = input(['Please select exercise :\n' ...
     ' 1 for two-body\n' ...
     ' 2 for J2 \n' ...
     ' 3 for atmospheric drag \n'...
-    ' 4 for genuine comparison (TBD) \n']);
+    ' 4 for genuine comparison \n']);
 
 %% Constants
 mu = 398600.4418e9;       % Earth gravitational parameter [m^3/s^2]     
@@ -39,7 +39,7 @@ N = 1e3;
 dt = tmax/N;
 tspan = 0:dt:tmax;
 
-%% Initial ISS orbital parameters
+%% Initial ISS Orbital Parameters
 e_ISS = .001379;                    % Eccentricity      [-]
 a_ISS = 6794.57e3;                  % Semi-major axis   [m]
 i_ISSd = 51.6445;                   % Inclination       [deg]
@@ -73,7 +73,7 @@ A = 1641;                           % Cross-section of the ISS [m^2]
 
 ISS_prop = [m_ISS, Cd, A];
 
-%% Two-body propagator %%
+%% Two-Body Propagator %%
 if exo == 1
     % SL3 orbital propagator
     [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt, 'fmodel', [0 0 0 0 0]);
@@ -103,7 +103,7 @@ if exo == 1
 
 elseif exo == 2
 
-%% J2-term (Earth's oblateness) %%
+%% J2-Term (Earth's Oblateness) %%
 
     % SL3 orbital propagator
     [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt, 'fmodel', [1 0 0 0 0]);
@@ -130,7 +130,7 @@ elseif exo == 2
 
     
 elseif exo == 3
-%% Earth's atmosphere %%
+%% Earth's Atmosphere %%
 
     % SL3 orbital propagator
     [~, oe_SL3, ~, ce_SL3] = orbprop(oe_ISSd, 'time', tmax, 'dt', dt, 'fmodel', [1 1 0 0 0]);
@@ -162,8 +162,69 @@ elseif exo == 3
     final_elements_print(ce_ODE, ce_SL3, oe_ODE, oe_SL3);
 
 elseif exo == 4
-%% Comparison with actual satellite data %%
+%% Comparison with Actual Satellite Data : Venus Satellite %%
 
+    % Time properties
+    tmax = 89175;                                   % Time between the two dates of the two TLEs [s]
+    N = 1e3;
+    dt = tmax/N;
+    tspan = 0:dt:tmax;
+    
+    % Conversion of the TLE into the ECI frame
+    [oe_start,oe_final,ss_start,ss_final] = TLE2ECI_VENUS(mu);
+    
+    % Initial Venus Orbital Parameters
+    a_Venus = oe_start(1);                      % Semi-major axis   [m]
+    e_Venus = oe_start(2);                      % Eccentricity      [-]
+    i_Venusd = oe_start(3);                     % Inclination       [deg]
+    i_Venusr = deg2rad(i_Venusd);               % Inclination       [rad]
+    omega_Venusd = oe_start(4);                 % Perigee argument  [deg]
+    omega_Venusr = deg2rad(omega_Venusd);       % Perigee argument  [rad]
+    RAAN_Venusd = oe_start(5);                  % RAAN              [deg]
+    RAAN_Venusr =  deg2rad(RAAN_Venusd);        % RAAN              [rad]
+    theta_Venusd = oe_start(6);                 % True anomaly      [deg]
+    theta_Venusr = deg2rad(theta_Venusd);       % True anomaly      [rad]
+
+    oe_Venusd = [a_Venus, e_Venus, i_Venusd, omega_Venusd, RAAN_Venusd, theta_Venusd];
+    oe_Venusr = [a_Venus, e_Venus, i_Venusr, omega_Venusr, RAAN_Venusr, theta_Venusr];
+
+    % Venus Ballistic Properties
+
+    m_Venus = 265;                              % Mass of Venus [kg]
+    Cd_Venus = 2;                               % Drag coefficient [-]
+    A_Venus = 2.2619;                           % Cross-section of Venus [m^2]
+
+    Venus_prop = [m_ISS, Cd_Venus, A_Venus];
+
+    
+    
+    % SL3 orbital propagator
+    [~, oe_SL3, ~, ce_SL3] = orbprop(oe_Venusd, 'time', tmax, 'dt', dt, 'fmodel', [1 1 0 0 0]);
+
+    % Numerical integration of Kepler relative motion
+    [~, oe_ODE, ce_ODE]  =  propagator03_ODE_DECHAMPS_FAYT(oe_Venusr, tspan, mu, Venus_prop);
+    
+    % SGP4 Propagator
+    [oe_SGP4,ce_SGP4] = SGP4_VENUS(mu,tspan);
+    
+    % Plots comparisons
+    cartesian_comparison_VENUS(ce_ODE, ce_SGP4', tspan, MATLABc);
+    keplerian_comparison_VENUS(oe_ODE, oe_SGP4', tspan, MATLABc);
+
+    % Ground track
+    f = figure;
+    f.Name = ('Ground tracks');
+    f.WindowState = 'maximized';
+    subplot(2,1,1);
+%     grdtrk(ce_ODE, 'ODE integration',0,dt);
+    grdtrk(ce_ODE, 'Fixed Earth',0,dt);
+    subplot(2,1,2);
+    grdtrk(ce_ODE, 'Rotating Earth',1,dt);
+%     grdtrk(ce_SL3, 'SL3 propagator',0,dt);
+    
+    orb_trk_3d(ce_ODE(:,1:3));
+    final_elements_print_VENUS(ce_ODE, ce_SGP4', ss_final', oe_ODE, oe_SGP4', oe_final');
+    
 end
 
 
@@ -226,6 +287,71 @@ function final_elements_print(cart_ODE, cart_SL3, oe_ODE, oe_SL3)
      );
 end
 
+function final_elements_print_VENUS(cart_ODE, cart_SGP4, cart_TLE2, oe_ODE, oe_SGP4, oe_TLE2)    
+    
+    % Cartesian print
+    x_SGP4 = cart_SGP4(end,1); xdot_SGP4 = cart_SGP4(end,4);
+    y_SGP4 = cart_SGP4(end,2); ydot_SGP4 = cart_SGP4(end,5);
+    z_SGP4 = cart_SGP4(end,3); zdot_SGP4 = cart_SGP4(end,6);
+    
+    x_ODE = cart_ODE(end,1); xdot_ODE = cart_ODE(end,4);
+    y_ODE = cart_ODE(end,2); ydot_ODE = cart_ODE(end,5);
+    z_ODE = cart_ODE(end,3); zdot_ODE = cart_ODE(end,6);
+    
+    x_TLE2 = cart_TLE2(end,1); xdot_TLE2 = cart_TLE2(end,4);
+    y_TLE2 = cart_TLE2(end,2); ydot_TLE2 = cart_TLE2(end,5);
+    z_TLE2 = cart_TLE2(end,3); zdot_TLE2 = cart_TLE2(end,6);
+    
+    fprintf(['\nFinal cartesian coordinates are\n' ...
+       '                   TLE2             SGP4              Error                  Own              Error\n' ...
+       'x [km] =         %.2f          %.2f            %.1e %%             %.2f           %.1e %%\n' ...
+       'y [km] =         %.2f          %.2f            %.1e %%             %.2f           %.1e %%\n' ...
+       'z [km] =           %.2f            %.2f             %.1e %%              %.2f            %.1e %%\n' ...
+       'xdot [km/s] =      %.2f             %.2f             %.1e %%               %.2f            %.1e %%\n' ...
+       'ydot [km/s] =     %.2f            %.2f             %.1e %%              %.2f            %.1e %%\n' ...
+       'zdot [km/s] =      %.2f             %.2f             %.1e %%               %.2f            %.1e %%\n'], ...
+        x_TLE2/1000,   x_SGP4/1000,     100 * abs( (x_TLE2 - x_SGP4)       / x_TLE2),       x_ODE/1000,     100 * abs( (x_TLE2 - x_ODE)       / x_TLE2), ...
+        y_TLE2/1000,   y_SGP4/1000,     100 * abs( (y_TLE2 - y_SGP4)       / y_TLE2),       y_ODE/1000,     100 * abs( (y_TLE2 - y_ODE)       / y_TLE2), ...
+        z_TLE2/1000,   z_SGP4/1000,     100 * abs( (z_TLE2 - z_SGP4)       / z_TLE2),       z_ODE/1000,     100 * abs( (z_TLE2 - z_ODE)       / z_TLE2), ...
+     xdot_TLE2/1000,   xdot_SGP4/1000,  100 * abs( (xdot_TLE2 - xdot_SGP4) / xdot_TLE2),    xdot_ODE/1000,  100 * abs( (xdot_TLE2 - xdot_ODE) / xdot_TLE2), ...
+     ydot_TLE2/1000,   ydot_SGP4/1000,  100 * abs( (ydot_TLE2 - ydot_SGP4) / ydot_TLE2),    ydot_ODE/1000,  100 * abs( (ydot_TLE2 - ydot_ODE) / ydot_TLE2), ...
+     zdot_TLE2/1000,   zdot_SGP4/1000,  100 * abs( (zdot_TLE2 - zdot_SGP4) / zdot_TLE2),    zdot_ODE/1000,  100 * abs( (zdot_TLE2 - zdot_ODE) / zdot_TLE2) ...
+     );
+    
+    % Keplerian print
+    a_SGP4 = oe_SGP4(end,1); omega_SGP4 = oe_SGP4(end,4);
+    e_SGP4 = oe_SGP4(end,2); raan_SGP4 = oe_SGP4(end,5);
+    i_SGP4 = oe_SGP4(end,3); theta_SGP4 = oe_SGP4(end,6);
+    
+    a_ODE = oe_ODE(end,1); omega_ODE = rad2deg(oe_ODE(end,4));
+    e_ODE = oe_ODE(end,2); raan_ODE = rad2deg(oe_ODE(end,5));
+    i_ODE = rad2deg(oe_ODE(end,3)); theta_ODE = rad2deg(oe_ODE(end,6));
+    
+    a_TLE2 = oe_TLE2(end,1); omega_TLE2 = oe_TLE2(end,4); 
+    e_TLE2 = oe_TLE2(end,2); raan_TLE2 = oe_TLE2(end,5);
+    i_TLE2 = oe_TLE2(end,3); theta_TLE2 = oe_TLE2(end,6);
+    
+    % In the relative error, we add 360° to omega just to avoid having a
+    % wrong relative error since 0° = 360° (SGP4 only as Own is close to
+    % zero)
+    
+    fprintf(['\nFinal Keplerian  coordinates are\n' ...
+       '                  TLE2          SGP4          Error              Own              Error\n' ...
+       'a [km] =         %.2f       %.2f       %.1e %%          %.2f          %.1e %%\n' ...
+       'e [-] =            %.2f        %.2e      %.1e %%          %.2e         %.1e %%\n' ...
+       'i [deg] =         %.2f         %.2f        %.1e %%           %.2f           %.1e %%\n' ...
+       '\x03C9 [deg] =          %.2f        %.2f        %.1e %%          %.2f           %.1e %%\n' ...
+       '\x03A9 [deg] =         %.2f         %.2f        %.1e %%           %.2f           %.1e %%\n' ...
+       '\x03B8 [deg] =        %.2f        %.2f        %.1e %%            %.2f           %.1e %%\n'], ...
+     a_TLE2/1000,   a_SGP4/1000, 100 * abs(a_TLE2 - a_SGP4)         / a_TLE2,               a_ODE/1000,    100 * abs(a_TLE2 - a_ODE)         / a_TLE2, ...
+     e_TLE2,        e_SGP4,      100 * abs(e_TLE2 - e_SGP4)         / e_TLE2,               e_ODE,         100 * abs(e_TLE2 - e_ODE)         / e_TLE2, ...
+     i_TLE2,        i_SGP4,      100 * abs(i_TLE2 - i_SGP4)         / i_TLE2,               i_ODE,         100 * abs(i_TLE2 - i_ODE)         / i_TLE2, ...
+     omega_TLE2,    omega_SGP4,  100 * abs(omega_TLE2+360 - omega_SGP4) / (omega_TLE2+360), omega_ODE,     100 * abs(omega_TLE2 - omega_ODE) / omega_TLE2, ...
+     raan_TLE2,     raan_SGP4,   100 * abs(raan_TLE2 - raan_SGP4)   / raan_TLE2,            raan_ODE,      100 * abs(raan_TLE2 - raan_ODE)   / raan_TLE2, ...
+     theta_TLE2,    theta_SGP4,  100 * abs(theta_TLE2 - theta_SGP4) / theta_TLE2,           theta_ODE,     100 * abs(theta_TLE2 - theta_ODE) / theta_TLE2 ...
+     );
+end
+
 function cartesian_comparison(vec_ODE, vec_SL3, tspan, MATLABc)
 
 f = figure;
@@ -264,6 +390,50 @@ title('zdot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
 
 
 leg = legend('ode45 integrator', 'SL3 propagator');
+set(leg,'Position', [.455 .01 .125 .075],'Units', 'normalized');
+
+set(gcf, 'position', [300, 200, 700, 500])
+
+end
+
+function cartesian_comparison_VENUS(vec_ODE, vec_SGP4, tspan, MATLABc)
+
+f = figure;
+f.Name = ('Comparison of state-space vectors');
+f.WindowState = 'maximized';
+
+subplot(3,2,1)
+plot( tspan/3600 ,  vec_ODE(:,1)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SGP4(:,1)/1000 , 'Color' , MATLABc{2}); 
+title('x'); ylabel('Position [km]'); xlabel('Time [hours]');
+
+subplot(3,2,3)
+plot( tspan/3600 ,  vec_ODE(:,2)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SGP4(:,2)/1000 , 'Color' , MATLABc{2}); 
+title('y'); ylabel('Position [km]'); xlabel('Time [hours]');
+
+subplot(3,2,5)
+plot( tspan/3600 ,  vec_ODE(:,3)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SGP4(:,3)/1000 , 'Color' , MATLABc{2}); 
+title('z'); ylabel('Position [km]'); xlabel('Time [hours]');
+
+subplot(3,2,2);
+plot( tspan/3600 ,  vec_ODE(:,4)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SGP4(:,4)/1000 , 'Color' , MATLABc{2}); 
+title('xdot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
+
+subplot(3,2,4);
+plot( tspan/3600 ,  vec_ODE(:,5)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SGP4(:,5)/1000 , 'Color' , MATLABc{2}); 
+title('ydot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
+
+subplot(3,2,6);
+plot( tspan/3600 ,  vec_ODE(:,6)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SGP4(:,6)/1000 , 'Color' , MATLABc{2});
+title('zdot'); ylabel('Velocity [km/s]'); xlabel('Time [hours]');
+
+
+leg = legend('ode45 integrator', 'SGP4 propagator');
 set(leg,'Position', [.455 .01 .125 .075],'Units', 'normalized');
 
 set(gcf, 'position', [300, 200, 700, 500])
@@ -316,4 +486,47 @@ set(gcf, 'position', [300, 200, 700, 500])
 
 end
 
+function keplerian_comparison_VENUS(vec_ODE, vec_SGP4, tspan, MATLABc)
 
+f = figure;
+f.Name = ('Comparison of orbital elements');
+f.WindowState = 'maximized';
+
+subplot(3,2,1);
+plot( tspan/3600 ,  vec_ODE(:,1)/1000 , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SGP4(:,1)/1000 , 'Color' , MATLABc{2}); 
+title('Semi-major axis'); ylabel('a [km]'); xlabel('Time [hours]');
+
+subplot(3,2,3);
+plot( tspan/3600 ,  vec_ODE(:,2) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,  vec_SGP4(:,2) , 'Color' , MATLABc{2}); 
+title('Eccentricity'); ylabel('e [-]'); xlabel('Time [hours]');
+
+subplot(3,2,5);
+plot( tspan/3600 ,  rad2deg(vec_ODE(:,3)) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,           vec_SGP4(:,3) , 'Color' , MATLABc{2}); 
+title('Inclination'); ylabel('i [deg]'); xlabel('Time [hours]');
+
+subplot(3,2,2);
+plot( tspan/3600 ,  rad2deg(vec_ODE(:,4)) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,           vec_SGP4(:,4) , 'Color' , MATLABc{2}); 
+title('Argument of perigee'); 
+ylabel('\omega [deg]'); xlabel('Time [hours]');
+
+subplot(3,2,4);
+plot( tspan/3600 ,  rad2deg(vec_ODE(:,5)) , 'Color' , MATLABc{1}); hold on;
+plot( tspan/3600 ,           vec_SGP4(:,5) , 'Color' , MATLABc{2}); 
+title('RAAN'); ylabel('\Omega [deg]'); xlabel('Time [hours]');
+
+subplot(3,2,6);
+plot( tspan/3600 ,  rad2deg(vec_ODE(:,6)) , 'Color' , MATLABc{1});  hold on;
+plot( tspan/3600 ,           vec_SGP4(:,6) , 'Color' , MATLABc{2});
+title('True anomaly'); ylabel('\theta [deg]'); xlabel('Time [hours]');
+
+
+leg = legend('ode45 integrator', 'SGP4 propagator');
+set(leg,'Position', [.455 .01 .125 .075],'Units', 'normalized');
+
+set(gcf, 'position', [300, 200, 700, 500])
+
+end
