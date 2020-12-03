@@ -194,7 +194,7 @@ elseif exo == 4
     Cd_Venus = 2;                               % Drag coefficient [-]
     A_Venus = 2.2619;                           % Cross-section of Venus [m^2]
 
-    Venus_prop = [m_ISS, Cd_Venus, A_Venus];
+    Venus_prop = [m_Venus, Cd_Venus, A_Venus];
 
     
     
@@ -443,6 +443,21 @@ end
 
 function keplerian_comparison(vec_ODE, vec_SL3, tspan, MATLABc)
 
+for i = 1:length(tspan)
+        if oe_S3L(i,4) > 350
+           vec_SL3(i,4) = vec_SL3(i,4) - 360;
+        end
+        if oe_S3L(i,6) > 350
+            vec_SL3(i,6) = vec_SL3(i,6) - 360;
+        end
+        if oe_ODE(i,4) > 350
+           vec_ODE(i,4) = vec_ODE(i,4) - 360;
+        end
+        if oe_ODE(i,6) > 350
+            vec_ODE(i,6) = vec_ODE(i,6) - 360;
+        end
+end
+
 f = figure;
 f.Name = ('Comparison of orbital elements');
 f.WindowState = 'maximized';
@@ -487,6 +502,21 @@ set(gcf, 'position', [300, 200, 700, 500])
 end
 
 function keplerian_comparison_VENUS(vec_ODE, vec_SGP4, tspan, MATLABc)
+
+for i = 1:length(tspan)
+        if vec_SGP4(i,4) > 350
+           vec_SGP4(i,4) = vec_SGP4(i,4) - 360;
+        end
+        if vec_SGP4(i,6) > 350
+           vec_SGP4(i,6) = vec_SGP4(i,6) - 360;
+        end
+        if vec_ODE(i,4) > 350
+           vec_ODE(i,4) = vec_ODE(i,4) - 360;
+        end
+        if vec_ODE(i,6) > 350
+           vec_ODE(i,6) = vec_ODE(i,6) - 360;
+        end        
+end
 
 f = figure;
 f.Name = ('Comparison of orbital elements');

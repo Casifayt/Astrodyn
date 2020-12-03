@@ -14,10 +14,10 @@ function [oe_SGP4,ss_SGP4] = SGP4_VENUS(mu,tspan)
 %   - oe_vec : Vector of Keplerian elements (1x6) ordered as follows :
 %       - oe_vec(1) : a     - semi-major axis       [m]
 %       - oe_vec(2) : e     - orbit eccentricity    [-]
-%       - oe_vec(3) : i     - inclination           [rad]
-%       - oe_vec(4) : omega - argument of perigee   [rad]
-%       - oe_vec(5) : Omega - RAAN                  [rad]
-%       - oe_vec(6) : theta - true anomaly          [rad]
+%       - oe_vec(3) : i     - inclination           [deg]
+%       - oe_vec(4) : omega - argument of perigee   [deg]
+%       - oe_vec(5) : Omega - RAAN                  [deg]
+%       - oe_vec(6) : theta - true anomaly          [deg]
 
 %% Simulation of the TLEs with the SGP4 Propagator (we only retain TLE 1)
 
