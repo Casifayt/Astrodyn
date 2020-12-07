@@ -1,8 +1,10 @@
-function orb_trk_3d (cart_vec)
+function orb_trk_3d_DF (cart_vec, tspan, rot)
 % This function plots the orbit around the Earth in 3D
 %
 % INPUTS
-%   - cart_vec : Array of cartesian coordinates [m] 
+%   - cart_vec  : Array of cartesian coordinates        [m] 
+%   - tspan     : Vector of time                        [s]
+%   - rot       : Parameter to animate the 3D Earth     [-]
 %
 % Copyrights for the Earth 3D plot to Ryan Gray, 2013
 % Taken from MathWorks at 
@@ -11,64 +13,29 @@ function orb_trk_3d (cart_vec)
 alpha = .8;         % Transparency of the globe
 
 % Plot the 3D Earth
-globe = earth3d(alpha);
+earth3d(alpha);
 
 % Plot the 3D orbit
 x_vec = cart_vec(:,1);
 y_vec = cart_vec(:,2);
 z_vec = cart_vec(:,3);
 
-plot3(x_vec, y_vec, z_vec, 'LineWidth', 1.5);
+plot3(x_vec, y_vec, z_vec, 'LineWidth', 2.5);
 
 plot3(x_vec(1), y_vec(1), z_vec(1), 's', ...
-    'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 5);
+    'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 8);
 text(x_vec(1) + 1e5, y_vec(1) + 1e5, z_vec(1) + 1e4, ...
     'Start', 'Color', 'r');
 
+
 plot3(x_vec(end), y_vec(end), z_vec(end), 'o', ...
-    'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 5);
+    'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 8);
 text(x_vec(end) + 1e5, y_vec(end) + 1e5, z_vec(end) + 1e3, ...
     'End', 'Color', 'r', 'HorizontalAlignment', 'right');
 
-
-
-% 
-% erot = 360/86400;
-% tf_obj = hgtransform;
-% set(globe,'Parent', tf_obj);
-% 
-% % Rotate the 3D Earth
-% for i = 1:length(tspan)
-%     set(tf_obj,'Matrix', makehgtform('zrotate',erot*i));
-%     makehgtform('zrotate',erot*i);
-%     
-%     if i == 1
-%         start_prop = plot3(x_vec(i), y_vec(i), z_vec(i), 's', ...
-%     'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 5);
-%     else
-%         line([x_vec(i-1) x_vec(i)], [y_vec(i-1) y_vec(i)], [z_vec(i-1) z_vec(i)]);
-%     end
-%     
-%     ISS_mark = plot3(x_vec(i), y_vec(i), z_vec(i), ...
-%         'h', 'MarkerSize', 5, 'MarkerFaceColor', 'r');
-%     ISS_text = text(x_vec(i)+1e3, y_vec(i)+1e3, z_vec(i)+1E3,...
-%         'ISS', 'Color', 'b');
-%     
-%     drawnow;
-%     legend(start_prop, 'Start');
-%     
-%     delete(ISS_mark);
-%     delete(ISS_text);
-%     
-% end
-% 
-% end_prop = plot3(x_vec(end), y_vec(end), z_vec(end), 'o', ...
-%     'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 5);
-% legend(end_prop, 'Start', 'End');
-
 end
 
-function globe = earth3d(alpha)
+function earth3d(alpha)
 %% Textured 3D Earth example
 %
 % Ryan Gray
@@ -93,7 +60,7 @@ prad    = 6371008.7714; % polar radius (meters)
 
 %% Create figure
 
-f = figure('Color', space_color, 'Name', '3D Orbit', 'WindowState', 'maximized');
+figure('Color', space_color, 'Name', '3D Orbit', 'WindowState', 'maximized');
 
 hold on;
 

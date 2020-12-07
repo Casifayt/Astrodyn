@@ -1,6 +1,6 @@
-function [tspan, oe_vec, ss_vec, geo_vec] = propagator03_ODE_DECHAMPS_FAYT (oe0, tspan, mu, ISS_prop)
+function [tspan, oe_vec, ss_vec] = propagator03_DF_drag_only (oe0, tspan, mu, ISS_prop)
 % This function provides an orbital propagation assuming Keplerian motion
-% under the two-body assumption with J2 perturbation.
+% under the two-body assumption with the atmospheric drag perturbation.
 % The EoM are integrated using the ODE45 solver.
 % 
 % INPUTS
@@ -26,7 +26,7 @@ function [tspan, oe_vec, ss_vec, geo_vec] = propagator03_ODE_DECHAMPS_FAYT (oe0,
 
 
 % For computational purposes, Cartesian coordinates are used.
-ss0 = kepl2cart_KZ(oe0, mu);
+ss0 = kepl2cart_DF(oe0, mu);
 
 % Setting of the solver option
 options = odeset('RelTol',1e-8,'AbsTol',1e-8);
@@ -36,7 +36,7 @@ options = odeset('RelTol',1e-8,'AbsTol',1e-8);
     tspan, ss0, options);
 
 % Transformation to orbital elements
-oe_vec = cart2kepl_KZ(ss_vec', mu)';
+oe_vec = cart2kepl_DF(ss_vec', mu)';
 
 geo_vec = zeros(length(ss_vec),3);
 
@@ -107,56 +107,91 @@ function A = accel_field(ss_vec, mu, ISS_prop)
 
 % Constants
 R = 6371900;            % Earth's average radius (UGGI)     [m]
+% J2 = 1.082629e-3;       % Adimensional J2 term              [-]
 J = 1.082629e-3;       % Adimensional J2 term              [-]
 
-% Extraction of Cartesian coordinates
-x = ss_vec(1); y = ss_vec(2); z = ss_vec(3);
+% Spherical coordinates
+r = norm(ss_vec(1:3));                  % Radius                [m]
+rho_r = sqrt(ss_vec(1)^2 + ss_vec(2)^2);  % Cylindrical radius    [m]
+phi = atan2(rho_r, ss_vec(3));            % Azimuthal angle       [rad]
+the = atan2(ss_vec(2),ss_vec(1));       % Polar angle           [rad]
 
-% Norm of the position vector 
-r = norm(ss_vec(1:3));                    % Radius                [m]
+% Direction cosines
+sp = sin(phi); cp = cos(phi);
+st = sin(the); ct = cos(the);
 
-%% Acceleration fields 
-% Two-body acceleration field
-A_2B = - mu / r^3 * [
-    x;
-    y;
-    z];
-
-% J2 perturbation
-A_J2 = 3/2 * J * mu * R^2 / r^4 * [
-    x/r * (5 * z^2 / r^2 - 1) ;
-    y/r * (5 * z^2 / r^2 - 1) ;
-    z/r * (5 * z^2 / r^2 - 3) ];
+% Gradient of potential field could have been computed following :
+% syms r_var phi_var
+% U = mu / r_var * (1 - J2 / 2 * R^2 / r_var^2 * (3 * sin(phi_var)^2 - 1)
+% accel = [ diff(U,r); 1/r * diff(U,phi); 0];
+% A_sph = subs(accel, [r_var phi_var], [r phi]);
+% But the symbolic variable implementation is time-consuming so derivation
+% has been made by hand and directly given for computation by the code
 
 
-% Atmospheric drag
+% Acceleration in radial direction
+% accel_rad = mu  / 2 / r^4 * (   ...
+%       9 * J2 * R^2 * sp^2       ...
+%     - 3 * J2 * R^2              ...
+%     - 2 * r^2               );
 
-% Extraction of ISS properties
+accel_rad = - 3/2 * J * mu / r^2 * (R/r)^2 * (3 * cp^2 - 1);
+
+% Acceleration in azimuthal direction
+% accel_azi =  3 * mu * J2 * R^2 * sp * cp / r^4;
+
+accel_azi = -3/2 * J * mu / r^2 * (R/r)^2 * sp * cp;
+
+% Acceleration field in spherical coordinates
+A_sph = [ 
+    accel_rad ; 
+    accel_azi ;
+            0 ;
+         ];
+
+
+% Transformation matrix from spherical to cartesian
+M_sph2cart = [ 
+    sp * ct    cp * ct    -st;
+    sp * st    cp * st     ct;
+         cp        -sp      0;
+         ];
+
+% Acceleration field in cartesian coordinates
+A = M_sph2cart * A_sph;
+
+A = - mu / r^3 * [ss_vec(1); ss_vec(2); ss_vec(3)];  
+% + 3/2 * J * mu * R^2 / r^4 * [...
+%     ss_vec(1)/r * (5 * ss_vec(3)^2 / r^2 - 1) ;
+%     ss_vec(2)/r * (5 * ss_vec(3)^2 / r^2 - 1) ;
+%     ss_vec(3)/r * (5 * ss_vec(3)^2 / r^2 - 3) ;];
+
+
+
+
+
 m_ISS = ISS_prop(1);
 Cd_ISS = ISS_prop(2);
 S_ref_ISS = ISS_prop(3);
 
-% Velocity vector extraction
 vel_vec = ss_vec(4:end);
-rdot = norm(vel_vec);               % Norm of velocity          [m/s]
-vel_vec_unitary = vel_vec / rdot;   % Velocity unitary vector   [-]
+rdot = norm(vel_vec);
+vel_vec_unitary = vel_vec / rdot;
 
-% Earth angular velocity
 earth_ang_vel = 2*pi/86400;
 earth_ang_vel = [0, 0, earth_ang_vel];
 
-% True airspeed of the spacecraft
+% If the Matlab command "cross" is applied to vectors, they must have a 
+% length of 3.
+
 vtas = rdot + cross(ss_vec(1:3), earth_ang_vel); 
 
-% Computation of the atmospheric density through Harris-Priester algorithm
 rho_atm = harris_priester(ss_vec(1:3));
 
-% Atmospheric decceleration
-A_atm_norm = .5 * Cd_ISS * S_ref_ISS * rho_atm * vtas.^2 / m_ISS;
-A_atm = - A_atm_norm * vel_vec_unitary;
+f_atm_norm = 0.5 * Cd_ISS * S_ref_ISS * rho_atm * vtas.^2 / m_ISS;
+f_atm = - f_atm_norm * vel_vec_unitary;
 
-%% Total acceleration field
-A = A_2B + A_J2 + A_atm;
+A = A + f_atm*1.75e2;
 
 end
 
@@ -347,5 +382,3 @@ N = a / sqrt(1 - e2 * sin_phi^2);
 h = RHO * cos(phi) + (z + e2 * N * sin_phi) * sin_phi - N; % [m]
 
 end
-
-

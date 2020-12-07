@@ -1,4 +1,4 @@
-function [ss_vec] = kepl2cart_KZ(oe, mu)
+function [ss_vec] = kepl2cart_DF(oe, mu)
 % This function transforms keplerian elements into cartesian elements
 %
 % INPUTS

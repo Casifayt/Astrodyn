@@ -1,11 +1,11 @@
-function [tspan, oe_vec, ss_vec] =  KEPLER_analytical(oe0, tspan, mu)
-% This function computes the evolution of the orbital elements by solving the
-% Kepler equation, using the Newton-Raphson method
+function [tspan, oe_vec, ss_vec] =  analytical_propagator01(oe0, tspan, mu)
+% This function computes the analytical evolution of the orbital elements 
+% by solving the Kepler equation, using the Newton-Raphson method
 % 
-% Cécile equation
+% Kepler equation
 %       M(t) = E(t) - e * sin(E);
 % 
-% Newton-Cécile method
+% Newton-Raphson method
 %       E(j+1) = E(j) - f( E(j) ) / f'( E(j) )
 % 
 % INPUTS
@@ -24,7 +24,7 @@ function [tspan, oe_vec, ss_vec] =  KEPLER_analytical(oe0, tspan, mu)
 %   - ss_vec : Final cartesian coordinates vector (1x6) ordered as follows :
 %       - ss_vec(1:3) = r_vec = [   x    y    z  ]      [m]
 %       - ss_vec(4:6) = v_vec = [ xdot ydot zdot ]      [m/s]
-%   - oe_vec : Final keplerien coordinates vector (1x6) ordered as the
+%   - oe_vec : Final keplerian coordinates vector (1x6) ordered as the
 %   input vector
 % 
 % 
@@ -117,7 +117,7 @@ for ii = 1:length(tspan)
     ss_vec = [r_cart; rdot_cart];
 
     % Orbital elements vector
-    oe_vec = cart2kepl_KZ(ss_vec, mu)';
+    oe_vec = cart2kepl_DF(ss_vec, mu)';
     ss_vec = ss_vec';
 end
 end

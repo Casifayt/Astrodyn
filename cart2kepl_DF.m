@@ -1,4 +1,4 @@
-function [oe_vec] = cart2kepl_KZ(ss_vec, mu)
+function [oe_vec] = cart2kepl_DF(ss_vec, mu)
 % This function transforms state-space vector into oe_vecerian elements
 %
 % INPUTS
@@ -17,7 +17,7 @@ function [oe_vec] = cart2kepl_KZ(ss_vec, mu)
 %       - oe_vec(6) : theta - true anomaly          [deg]
 %
 % REFERENCES
-% Chapter 3A - The orbit in space of Pr. G. Kerschen
+% Chapter 3A - The orbit in space - Pr. G. Kerschen
 % see http://www.s3l.be/en/education
 
 I = [1 0 0];    % Towards vernal equinoxe

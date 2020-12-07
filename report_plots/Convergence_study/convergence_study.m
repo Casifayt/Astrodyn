@@ -1,3 +1,7 @@
+%% Convergence study
+% This script is used to plot the convergence of the ode45 solver according
+% to the relative tolerance setting. The norm of the relative error on position 
+% and velocity has been computed for different relative tolerances
 close all; clear;
 
 MATLABc = {
@@ -9,8 +13,6 @@ MATLABc = {
     [0.3010, 0.7450, 0.9330];
     [0.6350, 0.0780, 0.1840];
     };
-
-%% Convergence study
 
 % Relative tolerances array
 reltol = ones(1,10) * 1e-3;
@@ -32,7 +34,8 @@ norm_erel_cart = [
     7.49E-7  3.24E-7 ]; 
 
 % Plot
-figure; box on; grid on;
+f = figure;
+box on; grid on;
 
 plot(reltol,norm_erel_cart(:,1),  ...
     'Color', MATLABc{1},          ...
@@ -48,8 +51,10 @@ set(gca,                ...
     'YScale', 'log',    ...
     'XScale', 'log'      );
 
-xlabel('Relative tolerance'); 
+xlabel('Relative tolerance'); grid minor;
 ylabel('Norm of relative error vector');
 xlim([1e-15 1e-5]);
-legend({'Position', 'Velocity'}),
+legend({'Position', 'Velocity'});
+
+
 

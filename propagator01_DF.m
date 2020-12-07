@@ -1,4 +1,4 @@
-function [tspan, oe_vec, ss_vec] = propagator01_ODE_DECHAMPS_FAYT (oe0, tspan, mu, reltol)
+function [tspan, oe_vec, ss_vec] = propagator01_DF (oe0, tspan, mu, reltol)
 % This function provides an orbital propagation assuming Keplerian motion
 % under the two-body assumption.
 % The EoM are integrated using the ODE45 solver.
@@ -25,7 +25,7 @@ function [tspan, oe_vec, ss_vec] = propagator01_ODE_DECHAMPS_FAYT (oe0, tspan, m
 
 
 % For computational purposes, Cartesian coordinates are used.
-ss0 = kepl2cart_KZ(oe0, mu);
+ss0 = kepl2cart_DF(oe0, mu);
 
 % Setting the solver options
 options = odeset('RelTol',reltol,'AbsTol',1e-13);
@@ -35,7 +35,7 @@ options = odeset('RelTol',reltol,'AbsTol',1e-13);
     tspan, ss0, options);
 
 % Transformation to orbital elements
-oe_vec = cart2kepl_KZ(ss_vec', mu)';
+oe_vec = cart2kepl_DF(ss_vec', mu)';
 
 end
 

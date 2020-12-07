@@ -6,7 +6,7 @@ function grdtrk(rECEF, str, rot, dt)
 %   - rot   : Rotation of the Earth (0 or 1)        [-]
 %   - dt    : Time step of the simulation           [s] 
 %
-% Copyrights to the SL3 propagator for most of the script
+% Copyrights to the S3L propagator for most of the script
 
 earth_ang_vel = 360 / 86400;    % Earth angular vel [deg/s]
 n = size(rECEF, 1);
@@ -57,24 +57,24 @@ set(0, 'defaultaxesfontsize', 16); set(0, 'defaulttextfontsize', 16);
 box on; axis on;
 
 % Earth's surface
-image_file = 'http://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Land_ocean_ice_2048.jpg/1024px-Land_ocean_ice_2048.jpg';
+image_file = 'Earth_srf.jpg';
 data = imread(image_file);
 
 image('CData', data, 'XData', [-180 180], 'YData', [90 -90]);
 hold on; grid on;
 
 % Groundtrack plot
-plot(LON, LAT, 'r', 'linewidth', 0.2);
+plot(LON, LAT, 'r', 'Linewidth', 1);
 
 % Initial and final markers
 in = plot(LON(1), LAT(1), 's', ...
-    'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 5);
+    'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 8);
 fin = plot(LON(end), LAT(end), 'o', ...
-    'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 5);
+    'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'r', 'MarkerSize', 8);
 legend([in, fin], 'Start', 'End');
 
 % Plot title
-title(['Ground track - ' str]);
+title(str);
 % X axis
 xlabel('Longitude [deg]'); xlim([-180 180]);
 % Y axis
