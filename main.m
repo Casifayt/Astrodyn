@@ -152,11 +152,11 @@ elseif exo == 3
     f.Name = ('Ground tracks');
     f.WindowState = 'maximized';
     subplot(2,1,1);
-    grdtrk(ce_ODE, 'ODE integration',0,dt);
+    grdtrk(ce_ODE, 'DF3 propagator',0,dt);
 %     grdtrk(ce_ODE, 'Fixed Earth',0,dt);
     subplot(2,1,2);
 %     grdtrk(ce_ODE, 'Rotating Earth',1,dt);
-    grdtrk(ce_SL3, 'SL3 propagator',0,dt);
+    grdtrk(ce_SL3, 'S3L propagator',0,dt);
     
     orb_trk_3d(ce_ODE(:,1:3));
     final_elements_print(ce_ODE, ce_SL3, oe_ODE, oe_SL3);
@@ -441,19 +441,19 @@ set(gcf, 'position', [300, 200, 700, 500])
 end
 
 
-function keplerian_comparison(vec_ODE, vec_SL3, tspan, MATLABc)
+function keplerian_comparison(vec_ODE, vec_S3L, tspan, MATLABc)
 
 for i = 1:length(tspan)
-        if oe_S3L(i,4) > 350
-           vec_SL3(i,4) = vec_SL3(i,4) - 360;
+        if vec_S3L(i,4) > 350
+           vec_S3L(i,4) = vec_S3L(i,4) - 360;
         end
-        if oe_S3L(i,6) > 350
-            vec_SL3(i,6) = vec_SL3(i,6) - 360;
+        if vec_S3L(i,6) > 350
+            vec_S3L(i,6) = vec_S3L(i,6) - 360;
         end
-        if oe_ODE(i,4) > 350
+        if vec_ODE(i,4) > 350
            vec_ODE(i,4) = vec_ODE(i,4) - 360;
         end
-        if oe_ODE(i,6) > 350
+        if vec_ODE(i,6) > 350
             vec_ODE(i,6) = vec_ODE(i,6) - 360;
         end
 end
@@ -464,33 +464,33 @@ f.WindowState = 'maximized';
 
 subplot(3,2,1);
 plot( tspan/3600 ,  vec_ODE(:,1)/1000 , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_SL3(:,1)/1000 , 'Color' , MATLABc{2}); 
+plot( tspan/3600 ,  vec_S3L(:,1)/1000 , 'Color' , MATLABc{2}); 
 title('Semi-major axis'); ylabel('a [km]'); xlabel('Time [hours]');
 
 subplot(3,2,3);
 plot( tspan/3600 ,  vec_ODE(:,2) , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,  vec_SL3(:,2) , 'Color' , MATLABc{2}); 
+plot( tspan/3600 ,  vec_S3L(:,2) , 'Color' , MATLABc{2}); 
 title('Eccentricity'); ylabel('e [-]'); xlabel('Time [hours]');
 
 subplot(3,2,5);
 plot( tspan/3600 ,  rad2deg(vec_ODE(:,3)) , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,           vec_SL3(:,3) , 'Color' , MATLABc{2}); 
+plot( tspan/3600 ,           vec_S3L(:,3) , 'Color' , MATLABc{2}); 
 title('Inclination'); ylabel('i [deg]'); xlabel('Time [hours]');
 
 subplot(3,2,2);
 plot( tspan/3600 ,  rad2deg(vec_ODE(:,4)) , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,           vec_SL3(:,4) , 'Color' , MATLABc{2}); 
+plot( tspan/3600 ,           vec_S3L(:,4) , 'Color' , MATLABc{2}); 
 title('Argument of perigee'); 
 ylabel('\omega [deg]'); xlabel('Time [hours]');
 
 subplot(3,2,4);
 plot( tspan/3600 ,  rad2deg(vec_ODE(:,5)) , 'Color' , MATLABc{1}); hold on;
-plot( tspan/3600 ,           vec_SL3(:,5) , 'Color' , MATLABc{2}); 
+plot( tspan/3600 ,           vec_S3L(:,5) , 'Color' , MATLABc{2}); 
 title('RAAN'); ylabel('\Omega [deg]'); xlabel('Time [hours]');
 
 subplot(3,2,6);
 plot( tspan/3600 ,  rad2deg(vec_ODE(:,6)) , 'Color' , MATLABc{1});  hold on;
-plot( tspan/3600 ,           vec_SL3(:,6) , 'Color' , MATLABc{2});
+plot( tspan/3600 ,           vec_S3L(:,6) , 'Color' , MATLABc{2});
 title('True anomaly'); ylabel('\theta [deg]'); xlabel('Time [hours]');
 
 
